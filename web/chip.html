@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en" class="ui">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixelstorm — 3D chip explorer</title>
+<meta name="description" content="Fly around the Pixelstorm GPU in 3D while it runs a real Verilog simulation: lanes execute, memory requests travel to DRAM, and the framebuffer paints above the die.">
+<meta name="theme-color" content="#05070B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/chip.css">
+</head>
+<body>
+<nav class="unav scrolled" aria-label="Site">
+  <a class="ulogo" href="index.html" aria-label="Pixelstorm home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="url(#lg)" stroke-width="2"/><g fill="url(#lg)"><rect x="7" y="8" width="3.2" height="16" rx="1"/><rect x="12.3" y="8" width="3.2" height="16" rx="1"/><rect x="17.6" y="8" width="3.2" height="16" rx="1"/><rect x="22.9" y="8" width="3.2" height="16" rx="1"/></g><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38D6FF"/><stop offset=".55" stop-color="#5B84FF"/><stop offset="1" stop-color="#FF4D8D"/></linearGradient></defs></svg>
+    Pixelstorm
+  </a>
+  <div class="ulinks">
+    <a href="index.html">Home</a>
+    <a href="chip.html" aria-current="page">3D Chip</a>
+    <a href="visualizer.html">Visualizer</a>
+    <a href="labs.html">Labs</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
+    <a class="gh" href="https://github.com/Normansrule/pixelstorm-gpu">GitHub</a>
+  </div>
+</nav>
+
+<main class="stage">
+  <canvas id="gl" aria-label="3D model of the Pixelstorm GPU running a simulation. Drag to orbit, scroll to zoom, click a block to learn about it."></canvas>
+  <div id="labels" class="labels" aria-hidden="true"></div>
+  <div class="noweb" id="noWebgl" hidden>This page needs WebGL. Try the <a href="visualizer.html">2D visualizer</a> instead.</div>
+
+  <!-- ============ left HUD ============ -->
+  <aside class="hud left glass" aria-label="Simulation controls and telemetry">
+    <div class="hud-title"><span class="upill"><span class="dot"></span>Replaying RTL</span><h1>3D Chip Explorer</h1></div>
+    <label class="fld">Kernel <select id="kSel"></select></label>
+    <div class="transport">
+      <button class="tbtn" id="bStart" type="button" title="Restart" aria-label="Restart">⏮</button>
+      <button class="tbtn play" id="bPlay" type="button" aria-label="Play or pause">Pause</button>
+      <button class="tbtn" id="bStep" type="button" title="Next instruction (N)" aria-label="Next instruction">⏭</button>
+      <select id="spd" aria-label="Speed">
+        <option value="15">15 cyc/s</option><option value="60">60 cyc/s</option><option value="250" selected>250 cyc/s</option><option value="1000">1k cyc/s</option><option value="4000">4k cyc/s</option>
+      </select>
+    </div>
+    <div class="cyc"><span>cycle</span><b id="cyc">0</b><span id="cycMax">/ 0</span></div>
+    <input type="range" id="scrub" min="0" max="1000" value="0" aria-label="Cycle">
+    <div class="sms" id="smCards"></div>
+    <div class="tele">
+      <div><span>IPC</span><b id="tIpc">0</b></div>
+      <div><span>SIMD efficiency</span><b id="tEff">0%</b></div>
+      <div><span>DRAM requests</span><b id="tMem">0</b></div>
+      <div><span id="tPxL">pixels painted</span><b id="tPx">0</b></div>
+    </div>
+    <canvas id="spark" width="560" height="110" aria-label="Instructions per cycle over the whole run; the line marks now"></canvas>
+    <p class="spark-cap">Warp instructions per 100 cycles, whole run. Dips are memory stalls and barriers.</p>
+  </aside>
+
+  <!-- ============ right info ============ -->
+  <aside class="hud right glass" id="info" aria-live="polite">
+    <span class="eyebrow" id="iKind">How to use</span>
+    <h2 id="iTitle">Click any block on the die</h2>
+    <p id="iBody">Drag to orbit, scroll or pinch to zoom. Green lanes are executing, magenta lanes are waiting after a divergent branch, amber is memory traffic. The screen above the chip is the framebuffer in global memory, painting as warps store their pixels.</p>
+    <div id="iMeta" class="imeta"></div>
+    <div id="iLinks" class="ilinks"></div>
+  </aside>
+
+  <!-- ============ camera bar ============ -->
+  <div class="cambar glass" role="toolbar" aria-label="Camera">
+    <button type="button" data-cam="overview" class="on">Overview</button>
+    <button type="button" data-cam="sm0">SM 0</button>
+    <button type="button" data-cam="sm1">SM 1</button>
+    <button type="button" data-cam="memory">Memory</button>
+    <button type="button" data-cam="screen">Framebuffer</button>
+    <label><input type="checkbox" id="autoRot" checked> Orbit</label>
+    <label><input type="checkbox" id="showLbl" checked> Labels</label>
+  </div>
+</main>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/three-bloom.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script src="js/pixelstorm.js"></script>
+<script src="js/examples.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/chip.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+; =============================================================================
+; 03 divergence — what happens when threads of one warp disagree
+; -----------------------------------------------------------------------------
+;   int v;
+;   if (i & 1) v = i * 3;        // odd lanes
+;   else       v = i >> 1;       // even lanes
+;   for (int k = 0; k < (i & 3); k++) v += 10;   // different trip counts!
+;   out[i] = v;
+;
+; Watch the "active mask" in the visualizer: the warp runs the odd path with
+; half its lanes, then the even path with the other half, then both halves
+; reconverge. Inside the loop lanes drop out one by one. Every idle lane is
+; wasted hardware — that is the cost of divergence.
+; =============================================================================
+.kernel divergence
+.grid 1
+.block 16
+.equ OUT, 0x300
+.param 0, OUT
+.dump OUT, 16, out[i]
+
+    S2R   R0, TID              ; i (one block, so TID is the global id)
+    ANDI  R1, R0, 1
+    MOVI  R2, 0
+    SETP.NE P0, R1, R2         ; P0 = odd?
+@!P0 BRA even
+    MULI  R3, R0, 3            ; odd path
+    BRA   join
+even:
+    SHRI  R3, R0, 1            ; even path
+join:                          ; <- lanes reconverge here (min-PC)
+    ANDI  R4, R0, 3            ; trip count = i & 3
+    MOVI  R5, 0                ; k = 0
+loop:
+    SETP.GE P1, R5, R4
+@P1 BRA done                   ; lanes leave the loop at different times
+    ADDI  R3, R3, 10
+    ADDI  R5, R5, 1
+    BRA   loop
+done:
+    LDC   R6, c[0]
+    ADD   R6, R6, R0
+    STG   [R6], R3
+    EXIT

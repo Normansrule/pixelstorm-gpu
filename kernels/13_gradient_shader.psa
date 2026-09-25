@@ -1,0 +1,47 @@
+; 13 gradient_shader — the "hello world" of shaders: every thread colors one pixel
+; -----------------------------------------------------------------------------
+; A pixel (fragment) shader is a small program that runs once per pixel. On a
+; GPU that means one thread per pixel: the whole image is one big grid launch.
+; Here: a 32 x 32 image, one block per row, one thread per column.
+;
+; GLSL-style version:
+;   vec3 color = vec3(x / 32.0, y / 32.0, 1.0 - (x + y) / 64.0);
+; CUDA version:
+;   __global__ void shade(uint32_t* fb) {
+;       int x = threadIdx.x, y = blockIdx.x;
+;       int r = x * 8, g = y * 8, b = max(0, 255 - 4 * (x + y));
+;       fb[y * 32 + x] = (r << 16) | (g << 8) | b;
+;   }
+;
+; Watch for: zero divergence, perfectly coalesced stores, and the framebuffer
+; panel in the visualizer filling row by row as blocks finish.
+; =============================================================================
+.kernel gradient_shader
+.grid 32                       ; one block per row
+.block 32                      ; one thread per column (4 warps of 8)
+.equ W, 32
+.equ H, 32
+.equ FB, 0x1000
+.param 0, FB
+.fb FB, W, H                   ; show this memory as an image
+
+    S2R  R0, CTAID             ; y = blockIdx.x
+    S2R  R1, TID               ; x = threadIdx.x
+    SHLI R2, R1, 3             ; red   = x * 8
+    SHLI R3, R0, 3             ; green = y * 8
+    ADD  R4, R1, R0
+    SHLI R4, R4, 2             ; 4 * (x + y)
+    MOVI R5, 255
+    SUB  R4, R5, R4            ; blue = 255 - 4 * (x + y)
+    MOVI R6, 0
+    MAX  R4, R4, R6            ; clamp at 0
+    SHLI R2, R2, 16            ; pack 0x00RRGGBB
+    SHLI R3, R3, 8
+    OR   R2, R2, R3
+    OR   R2, R2, R4
+    SHLI R7, R0, 5             ; y * 32
+    ADD  R7, R7, R1            ; + x = pixel index
+    LDC  R8, c[0]
+    ADD  R8, R8, R7            ; &fb[y * W + x]
+    STG  [R8], R2
+    EXIT

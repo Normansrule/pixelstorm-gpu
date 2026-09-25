@@ -1,0 +1,46 @@
+; =============================================================================
+; 10 vote_ballot — warp-wide decisions in one instruction
+; -----------------------------------------------------------------------------
+;   bool big = v > 50;
+;   unsigned m = __ballot_sync(0xff, big);   // bit l set if lane l voted yes
+;   int count  = __popc(m);
+;   bool any   = __any_sync(0xff, big);
+;   bool all   = __all_sync(0xff, big);
+; Lane 0 of each warp writes [ballot, count, any, all].
+; =============================================================================
+.kernel vote_ballot
+.grid 1
+.block 32
+.equ IN,  0x000
+.equ OUT, 0x7C0
+.param 0, IN
+.param 1, OUT
+.rand IN, 32, 3, 100
+.dump OUT, 16, per warp: ballot mask, popcount, any, all
+
+    S2R   R0, TID
+    LDC   R1, c[0]
+    ADD   R1, R1, R0
+    LDG   R2, [R1]
+    MOVI  R3, 50
+    SETP.GT P0, R2, R3          ; my vote
+    VOTE.BALLOT R4, P0
+    POPC  R5, R4
+    VOTE.ANY P1, P0
+    VOTE.ALL P2, P0
+    MOVI  R6, 1
+    MOVI  R7, 0
+    SEL   R8, R6, R7, P1        ; any -> 0/1
+    SEL   R9, R6, R7, P2        ; all -> 0/1
+    S2R   R10, LANEID
+    SETP.NE P3, R10, R7
+@P3 EXIT
+    S2R   R11, WARPID
+    SHLI  R11, R11, 2
+    LDC   R12, c[1]
+    ADD   R12, R12, R11
+    STG   [R12], R4
+    STG   [R12+1], R5
+    STG   [R12+2], R8
+    STG   [R12+3], R9
+    EXIT

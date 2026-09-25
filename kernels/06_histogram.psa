@@ -1,0 +1,31 @@
+; =============================================================================
+; 06 histogram — many threads updating the same counters: atomics
+; -----------------------------------------------------------------------------
+;   int v = data[i];           // values 0..15
+;   atomicAdd(&bins[v], 1);
+;
+; Without ATOM two lanes could read the same old count and both write +1,
+; losing an update. ATOM.ADD serializes lanes inside the memory system.
+; =============================================================================
+.kernel histogram
+.grid 4
+.block 32
+.equ DATA, 0x000
+.equ BINS, 0x600
+.param 0, DATA
+.param 1, BINS
+.rand DATA, 128, 7, 16        ; 128 pseudo-random values in 0..15
+.dump BINS, 16, histogram bins
+
+    S2R   R0, TID
+    S2R   R1, CTAID
+    S2R   R2, NTID
+    MAD   R3, R1, R2, R0
+    LDC   R4, c[0]
+    ADD   R4, R4, R3
+    LDG   R5, [R4]               ; bin index
+    LDC   R6, c[1]
+    ADD   R6, R6, R5             ; &bins[v]
+    MOVI  R7, 1
+    ATOM.ADD R8, [R6], R7        ; R8 = old count (unused)
+    EXIT

@@ -1,0 +1,77 @@
+[
+ {
+  "name": "vector_add",
+  "file": "vector_add.json",
+  "cycles": 830
+ },
+ {
+  "name": "saxpy_fixed",
+  "file": "saxpy_fixed.json",
+  "cycles": 835
+ },
+ {
+  "name": "divergence",
+  "file": "divergence.json",
+  "cycles": 364
+ },
+ {
+  "name": "reduction_shared",
+  "file": "reduction_shared.json",
+  "cycles": 3106
+ },
+ {
+  "name": "reduction_shuffle",
+  "file": "reduction_shuffle.json",
+  "cycles": 1250
+ },
+ {
+  "name": "histogram",
+  "file": "histogram.json",
+  "cycles": 2162
+ },
+ {
+  "name": "matmul",
+  "file": "matmul.json",
+  "cycles": 3567
+ },
+ {
+  "name": "coalescing",
+  "file": "coalescing.json",
+  "cycles": 284
+ },
+ {
+  "name": "bank_conflicts",
+  "file": "bank_conflicts.json",
+  "cycles": 228
+ },
+ {
+  "name": "vote_ballot",
+  "file": "vote_ballot.json",
+  "cycles": 832
+ },
+ {
+  "name": "prefix_scan",
+  "file": "prefix_scan.json",
+  "cycles": 403
+ },
+ {
+  "name": "threshold_image",
+  "file": "threshold_image.json",
+  "cycles": 639
+ },
+ {
+  "name": "gradient_shader",
+  "file": "gradient_shader.json",
+  "cycles": 8892
+ },
+ {
+  "name": "triangle_raster",
+  "file": "triangle_raster.json",
+  "cycles": 17212
+ },
+ {
+  "name": "mandelbrot",
+  "file": "mandelbrot.json",
+  "cycles": 23420
+ }
+]

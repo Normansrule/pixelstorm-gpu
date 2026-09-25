@@ -1,0 +1,52 @@
+; =============================================================================
+; 07 matmul — C = A x B for 8x8 matrices, one thread per output element
+; -----------------------------------------------------------------------------
+;   int row = i / 8, col = i % 8, acc = 0;
+;   for (int k = 0; k < 8; k++) acc += A[row*8 + k] * B[k*8 + col];
+;   C[i] = acc;
+;
+; The inner loop is one MAD per iteration — the multiply-accumulate that
+; Tensor Cores do thousands of at once. Note the access patterns: within a
+; warp every lane reads the SAME A element (a broadcast, 1 transaction) and
+; 8 consecutive B elements (coalesced, 2 transactions).
+; =============================================================================
+.kernel matmul
+.grid 2
+.block 32
+.equ A, 0x000
+.equ B, 0x040
+.equ C, 0x080
+.param 0, A
+.param 1, B
+.param 2, C
+.seq  A, 64, 1, 1              ; A = 1..64 row-major
+.seq  B, 64, 0, 1              ; B = 0..63 row-major
+.dump C, 64, C = A x B (8x8)
+
+    S2R   R0, CTAID
+    S2R   R1, NTID
+    S2R   R2, TID
+    MAD   R3, R0, R1, R2        ; i
+    SHRI  R4, R3, 3             ; row
+    ANDI  R5, R3, 7             ; col
+    LDC   R6, c[0]
+    SHLI  R7, R4, 3
+    ADD   R6, R6, R7            ; &A[row][0]
+    LDC   R7, c[1]
+    ADD   R7, R7, R5            ; &B[0][col]
+    MOVI  R8, 0                 ; acc
+    MOVI  R9, 0                 ; k
+    MOVI  R13, 8
+kloop:
+    LDG   R10, [R6]             ; A[row][k]
+    LDG   R11, [R7]             ; B[k][col]
+    MAD   R8, R10, R11, R8      ; acc += a * b
+    ADDI  R6, R6, 1
+    ADDI  R7, R7, 8
+    ADDI  R9, R9, 1
+    SETP.LT P0, R9, R13
+@P0 BRA   kloop
+    LDC   R12, c[2]
+    ADD   R12, R12, R3
+    STG   [R12], R8
+    EXIT

@@ -1,0 +1,44 @@
+; =============================================================================
+; 11 prefix_scan — inclusive scan inside each warp (Hillis-Steele with SHFL.UP)
+; -----------------------------------------------------------------------------
+;   for (int d = 1; d < 8; d <<= 1) {
+;       int n = __shfl_up_sync(0xff, v, d);
+;       if (lane >= d) v += n;
+;   }
+; Scans are the building block of stream compaction, radix sort and
+; sparse-matrix kernels.
+; =============================================================================
+.kernel prefix_scan
+.grid 2
+.block 16
+.equ IN,  0x000
+.equ OUT, 0x800
+.param 0, IN
+.param 1, OUT
+.fill IN, 32, 1                 ; all ones -> output is 1,2,...,8 per warp
+.dump OUT, 32, inclusive scan per warp
+
+    S2R   R0, CTAID
+    S2R   R1, NTID
+    S2R   R2, TID
+    MAD   R3, R0, R1, R2
+    LDC   R4, c[0]
+    ADD   R4, R4, R3
+    LDG   R5, [R4]
+    S2R   R6, LANEID
+    MOVI  R9, 1
+    SETP.GE P0, R6, R9
+    SHFL.UP R7, R5, 1
+@P0 ADD   R5, R5, R7
+    MOVI  R9, 2
+    SETP.GE P0, R6, R9
+    SHFL.UP R7, R5, 2
+@P0 ADD   R5, R5, R7
+    MOVI  R9, 4
+    SETP.GE P0, R6, R9
+    SHFL.UP R7, R5, 4
+@P0 ADD   R5, R5, R7
+    LDC   R8, c[1]
+    ADD   R8, R8, R3
+    STG   [R8], R5
+    EXIT

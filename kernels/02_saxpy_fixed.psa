@@ -1,0 +1,45 @@
+; =============================================================================
+; 02 saxpy_fixed — y = a*x + y   (the classic BLAS level-1 kernel)
+; -----------------------------------------------------------------------------
+; Real GPUs do this in 32-bit floating point with one FFMA per element.
+; Pixelstorm is integer-only, so we use Q16.16 fixed point: the value v is
+; stored as v * 65536. QMUL multiplies two Q16.16 numbers.
+;
+;   __global__ void saxpy(int n, float a, const float* x, float* y) {
+;       int i = blockIdx.x * blockDim.x + threadIdx.x;
+;       if (i < n) y[i] = a * x[i] + y[i];
+;   }
+; =============================================================================
+.kernel saxpy_fixed
+.grid 2
+.block 32
+.equ N, 64
+.equ X, 0x000
+.equ Y, 0x100
+.equ ONE, 65536
+.param 0, X
+.param 1, Y
+.param 2, N
+.param 3, 163840       ; a = 2.5 in Q16.16
+.seq  X, N, 0, ONE     ; x[i] = i.0
+.fill Y, N, ONE        ; y[i] = 1.0
+.dump Y, N, y = 2.5*x + 1  (Q16.16, divide by 65536)
+
+    S2R   R0, CTAID
+    S2R   R1, NTID
+    S2R   R2, TID
+    MAD   R3, R0, R1, R2       ; i
+    LDC   R4, c[2]
+    SETP.GE P0, R3, R4
+@P0 EXIT
+    LDC   R5, c[0]
+    ADD   R5, R5, R3           ; &x[i]
+    LDC   R6, c[1]
+    ADD   R6, R6, R3           ; &y[i]
+    LDC   R7, c[3]             ; a
+    LDG   R8, [R5]             ; x[i]
+    LDG   R9, [R6]             ; y[i]
+    QMUL  R10, R7, R8          ; a * x[i]      (fixed-point multiply)
+    ADD   R10, R10, R9         ; + y[i]
+    STG   [R6], R10
+    EXIT

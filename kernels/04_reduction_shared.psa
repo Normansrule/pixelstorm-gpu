@@ -1,0 +1,57 @@
+; =============================================================================
+; 04 reduction_shared — block-wide sum with shared memory and __syncthreads()
+; -----------------------------------------------------------------------------
+;   __global__ void reduce(const int* in, int* out) {
+;       __shared__ int s[32];
+;       int t = threadIdx.x;
+;       s[t] = in[blockIdx.x * blockDim.x + t];
+;       __syncthreads();
+;       for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+;           if (t < stride) s[t] += s[t + stride];
+;           __syncthreads();
+;       }
+;       if (t == 0) out[blockIdx.x] = s[0];
+;   }
+;
+; A block of 32 threads is 4 warps. BAR parks each warp until all 4 arrive,
+; so no warp reads a partial sum that another warp has not written yet.
+; =============================================================================
+.kernel reduction_shared
+.grid 4
+.block 32
+.equ IN,  0x000
+.equ OUT, 0x400
+.param 0, IN
+.param 1, OUT
+.seq  IN, 128, 1, 1          ; 1, 2, 3, ... 128
+.dump OUT, 4, per-block sums (block b = sum of 32b+1 .. 32b+32)
+
+    S2R   R0, TID
+    S2R   R1, CTAID
+    S2R   R2, NTID
+    MAD   R3, R1, R2, R0        ; global index
+    LDC   R4, c[0]
+    ADD   R4, R4, R3
+    LDG   R5, [R4]
+    STS   [R0], R5              ; s[t] = in[i]
+    BAR                         ; __syncthreads()
+    SHRI  R6, R2, 1             ; stride = blockDim / 2
+    MOVI  R10, 0
+loop:
+    SETP.LT P0, R0, R6          ; active = t < stride   (predication, no branch)
+    ADD   R7, R0, R6
+@P0 LDS   R8, [R7]
+@P0 LDS   R9, [R0]
+@P0 ADD   R9, R9, R8
+@P0 STS   [R0], R9
+    BAR
+    SHRI  R6, R6, 1
+    SETP.GT P1, R6, R10
+@P1 BRA   loop                  ; uniform branch: every lane agrees
+    SETP.EQ P2, R0, R10
+@!P2 EXIT
+    LDS   R11, [R0]
+    LDC   R12, c[1]
+    ADD   R12, R12, R1
+    STG   [R12], R11            ; out[blockIdx.x] = s[0]
+    EXIT

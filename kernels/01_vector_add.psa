@@ -1,0 +1,48 @@
+; =============================================================================
+; 01 vector_add — the "hello world" of GPU computing
+; -----------------------------------------------------------------------------
+; CUDA version:
+;   __global__ void vadd(const int* A, const int* B, int* C, int n) {
+;       int i = blockIdx.x * blockDim.x + threadIdx.x;
+;       if (i >= n) return;
+;       C[i] = A[i] + B[i];
+;   }
+;   vadd<<<4, 16>>>(A, B, C, 64);
+;
+; Watch for: every lane runs the SAME instruction on DIFFERENT data (SIMT),
+; and the 8 loads of a warp collapse into 2 memory transactions (coalescing).
+; =============================================================================
+.kernel vector_add
+.grid 4
+.block 16
+.equ N, 64
+.equ A, 0x000
+.equ B, 0x100
+.equ C, 0x200
+.param 0, A          ; kernel arguments go to constant bank c[0..3]
+.param 1, B
+.param 2, C
+.param 3, N
+.seq  A, N, 0, 1     ; A[i] = i
+.seq  B, N, 100, 10  ; B[i] = 100 + 10*i
+.dump C, N, C = A + B
+.note Every thread computes one element. The grid covers all 64 elements.
+
+    S2R   R0, CTAID          ; R0 = blockIdx.x
+    S2R   R1, NTID           ; R1 = blockDim.x
+    S2R   R2, TID            ; R2 = threadIdx.x
+    MAD   R3, R0, R1, R2     ; R3 = i = blockIdx.x * blockDim.x + threadIdx.x
+    LDC   R4, c[3]           ; R4 = n
+    SETP.GE P0, R3, R4       ; P0 = (i >= n)
+@P0 EXIT                     ; out-of-range threads leave early
+    LDC   R5, c[0]           ; &A
+    LDC   R6, c[1]           ; &B
+    LDC   R7, c[2]           ; &C
+    ADD   R5, R5, R3         ; &A[i]
+    ADD   R6, R6, R3         ; &B[i]
+    ADD   R7, R7, R3         ; &C[i]
+    LDG   R8, [R5]           ; A[i]   (global load, coalesced)
+    LDG   R9, [R6]           ; B[i]
+    ADD   R10, R8, R9
+    STG   [R7], R10          ; C[i] = A[i] + B[i]
+    EXIT

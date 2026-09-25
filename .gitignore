@@ -1,0 +1,6 @@
+build/
+*.vcd
+*.vvp
+node_modules/
+.DS_Store
+web/img/

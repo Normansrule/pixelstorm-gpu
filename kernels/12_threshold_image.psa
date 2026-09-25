@@ -1,0 +1,33 @@
+; =============================================================================
+; 12 threshold_image — an 8x8 "image" turned black/white, branch-free
+; -----------------------------------------------------------------------------
+;   out[p] = (in[p] > 128) ? 255 : 0;     // SEL instead of if/else
+; Branch-free code keeps every lane active: no divergence at all.
+; Graphics shaders are full of this pattern.
+; =============================================================================
+.kernel threshold_image
+.grid 2
+.block 32
+.equ IN,  0x000
+.equ OUT, 0x900
+.param 0, IN
+.param 1, OUT
+.rand IN, 64, 11, 256
+.dump OUT, 64, thresholded 8x8 image
+
+    S2R   R0, CTAID
+    S2R   R1, NTID
+    S2R   R2, TID
+    MAD   R3, R0, R1, R2
+    LDC   R4, c[0]
+    ADD   R4, R4, R3
+    LDG   R5, [R4]
+    MOVI  R6, 128
+    SETP.GT P0, R5, R6
+    MOVI  R7, 255
+    MOVI  R8, 0
+    SEL   R9, R7, R8, P0
+    LDC   R10, c[1]
+    ADD   R10, R10, R3
+    STG   [R10], R9
+    EXIT

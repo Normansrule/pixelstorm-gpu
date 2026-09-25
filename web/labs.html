@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixelstorm labs — five GPU experiments you can run in your browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/labs.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="3" y="3" width="26" height="26" rx="3" class="bm-die"/>
+      <g class="bm-lanes"><rect x="7" y="8" width="3" height="16"/><rect x="12" y="8" width="3" height="16"/><rect x="17" y="8" width="3" height="16"/><rect x="22" y="8" width="3" height="16"/></g>
+    </svg>
+    <div>
+      <h1><a href="index.html">Pixelstorm</a> labs</h1>
+      <p class="tag">Change one knob, watch what the hardware has to do</p>
+    </div>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="index.html">Home</a>
+    <a href="chip.html">3D Chip</a>
+    <a href="visualizer.html">Visualizer</a>
+    <a href="labs.html" aria-current="page">Labs</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu">GitHub</a>
+  </nav>
+  <div class="controls-top"><button class="btn ghost" id="themeBtn" type="button">Dark theme</button></div>
+</header>
+
+<nav class="lab-nav" aria-label="Labs">
+  <a href="#coalesce"><span>1</span>Coalescing</a>
+  <a href="#banks"><span>2</span>Bank conflicts</a>
+  <a href="#diverge"><span>3</span>Divergence</a>
+  <a href="#latency"><span>4</span>Latency hiding</a>
+  <a href="#occupancy"><span>5</span>Occupancy</a>
+  <a href="#pixels"><span>6</span>Pixels and warps</a>
+</nav>
+
+<main class="labs">
+  <!-- ======================================================= 1 -->
+  <section class="lab panel" id="coalesce">
+    <div class="lab-head">
+      <h2><span class="num">1</span>Memory coalescing</h2>
+      <p>Every lane of a warp asks for one word at <code>base + lane × stride + offset</code>. DRAM only delivers whole lines, so the load/store unit groups lanes by line. Fewer lines means fewer transactions and less wasted bandwidth.</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>Stride (words) <output id="cStrideO"></output><input type="range" id="cStride" min="0" max="16" value="1"></label>
+        <label>Offset (words) <output id="cOffO"></output><input type="range" id="cOff" min="0" max="15" value="0"></label>
+        <label>Line size <select id="cLine"><option value="4" selected>4 words (Pixelstorm)</option><option value="8">8 words (32-byte sector)</option><option value="32">32 words (128-byte line)</option></select></label>
+        <label>Warp size <select id="cWarp"><option value="8" selected>8 (Pixelstorm)</option><option value="32">32 (NVIDIA)</option></select></label>
+        <div class="presets"><button type="button" data-c="1,0">Contiguous</button><button type="button" data-c="1,3">Misaligned</button><button type="button" data-c="4,0">Stride 4</button><button type="button" data-c="0,0">Broadcast</button><button type="button" data-c="16,0">Column of a matrix</button></div>
+      </form>
+      <div class="viz"><svg id="cSvg" role="img" aria-label="Lanes mapped to memory lines"></svg></div>
+      <div class="readout" id="cOut"></div>
+    </div>
+    <p class="real">In the real world: Nsight Compute reports this as "sectors per request". The ideal for 32 lanes reading 4-byte values is 4. See <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/08-memory.md">docs/08</a> and run <code>08 coalescing</code> in the <a href="visualizer.html">visualizer</a>.</p>
+  </section>
+
+  <!-- ======================================================= 2 -->
+  <section class="lab panel" id="banks">
+    <div class="lab-head">
+      <h2><span class="num">2</span>Shared-memory bank conflicts</h2>
+      <p>Shared memory is sliced into banks; word <code>a</code> lives in bank <code>a mod banks</code>. Each bank serves one word per cycle. Lanes that hit the same bank at different words must take turns. Lanes reading the same word share it for free.</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>Access pattern <select id="bPat">
+          <option value="row">s[t × stride]</option>
+          <option value="col">tile[t][c] with row pitch</option>
+          <option value="same">s[5] (everyone same word)</option>
+        </select></label>
+        <label>Stride / row pitch <output id="bStrideO"></output><input type="range" id="bStride" min="1" max="33" value="8"></label>
+        <label>Banks <select id="bBanks"><option value="8" selected>8 (Pixelstorm)</option><option value="32">32 (NVIDIA)</option></select></label>
+        <label>Warp size <select id="bWarp"><option value="8" selected>8</option><option value="32">32</option></select></label>
+        <div class="presets"><button type="button" data-b="row,1">Unit stride</button><button type="button" data-b="row,2">Stride 2</button><button type="button" data-b="col,8">Column, pitch 8</button><button type="button" data-b="col,9">Column, padded pitch 9</button></div>
+      </form>
+      <div class="viz"><svg id="bSvg" role="img" aria-label="Lanes stacked on shared-memory banks"></svg></div>
+      <div class="readout" id="bOut"></div>
+    </div>
+    <p class="real">In the real world: this is why CUDA tiles are declared <code>__shared__ float tile[32][33]</code>. The extra column is padding. See <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/08-memory.md">docs/08</a> and <code>09 bank conflicts</code>.</p>
+  </section>
+
+  <!-- ======================================================= 3 -->
+  <section class="lab panel" id="diverge">
+    <div class="lab-head">
+      <h2><span class="num">3</span>Branch divergence</h2>
+      <p>A warp has one instruction stream. When lanes disagree on <code>if (cond) {A} else {B}</code>, the warp runs A with some lanes switched off, then B with the others. Predication runs both for every lane without a branch.</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>Condition <select id="dCond">
+          <option value="odd">lane is odd</option>
+          <option value="lt">lane &lt; 2</option>
+          <option value="zero">lane == 0</option>
+          <option value="warp">warp-uniform (all agree)</option>
+          <option value="rand">data dependent (random)</option>
+        </select></label>
+        <label>Instructions in A <output id="dAO"></output><input type="range" id="dA" min="1" max="12" value="6"></label>
+        <label>Instructions in B <output id="dBO"></output><input type="range" id="dB" min="0" max="12" value="3"></label>
+        <label>Strategy <select id="dMode"><option value="branch">Branch (min-PC, like Pixelstorm)</option><option value="pred">Predication (both paths, no branch)</option></select></label>
+      </form>
+      <div class="viz"><svg id="dSvg" role="img" aria-label="Active mask per issued instruction"></svg></div>
+      <div class="readout" id="dOut"></div>
+    </div>
+    <p class="real">In the real world: Nsight Compute's "warp execution efficiency" is the SIMD efficiency shown here. Compilers pick predication for short bodies. See <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/07-divergence.md">docs/07</a> and <code>03 divergence</code>.</p>
+  </section>
+
+  <!-- ======================================================= 4 -->
+  <section class="lab panel" id="latency">
+    <div class="lab-head">
+      <h2><span class="num">4</span>Latency hiding with more warps</h2>
+      <p>Each warp repeats: one load, then some arithmetic that needs the loaded value. While a warp waits for memory, a latency-hiding scheduler issues from another warp. Pixelstorm today does not; this lab shows what exercise 2 in <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/12-make-it-better.md">docs/12</a> would buy.</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>Warps per SM <output id="lWO"></output><input type="range" id="lW" min="1" max="16" value="4"></label>
+        <label>Memory latency (cycles) <output id="lLO"></output><input type="range" id="lL" min="2" max="120" value="24"></label>
+        <label>Arithmetic per load <output id="lCO"></output><input type="range" id="lC" min="1" max="16" value="4"></label>
+        <label>Loop iterations <output id="lIO"></output><input type="range" id="lI" min="1" max="8" value="3"></label>
+        <label class="chk"><input type="checkbox" id="lStall"> Stall the whole SM on every load (Pixelstorm today)</label>
+      </form>
+      <div class="viz"><svg id="lSvg" role="img" aria-label="Issue timeline per warp"></svg></div>
+      <div class="readout" id="lOut"></div>
+    </div>
+    <p class="real">In the real world: an H100 SM holds up to 64 warps precisely so that hundreds of cycles of DRAM latency can be covered by other warps' work. Rule of thumb: warps needed ≈ latency ÷ arithmetic per load + 1.</p>
+  </section>
+
+  <!-- ======================================================= 5 -->
+  <section class="lab panel" id="occupancy">
+    <div class="lab-head">
+      <h2><span class="num">5</span>Occupancy calculator</h2>
+      <p>How many warps can live on one SM at once? Each resource (registers, shared memory, thread slots, block slots) sets a limit; the smallest one wins. More resident warps means more latency hiding (lab 4).</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>GPU <select id="oGpu"><option value="h100">NVIDIA H100 (compute capability 9.0)</option><option value="a100">NVIDIA A100 (8.0)</option><option value="rtx">GeForce RTX 30-series (8.6)</option><option value="ws">Pixelstorm (as built)</option></select></label>
+        <label>Threads per block <output id="oTO"></output><input type="range" id="oT" min="32" max="1024" step="32" value="256"></label>
+        <label>Registers per thread <output id="oRO"></output><input type="range" id="oR" min="16" max="255" value="64"></label>
+        <label>Shared memory per block (KB) <output id="oSO"></output><input type="range" id="oS" min="0" max="160" value="16"></label>
+      </form>
+      <div class="viz"><svg id="oSvg" role="img" aria-label="Occupancy limits"></svg></div>
+      <div class="readout" id="oOut"></div>
+    </div>
+    <p class="real">Simplified from NVIDIA's occupancy rules (register allocation in 256-register units per warp; shared memory rounded to 1 KB). For exact numbers use the occupancy section of Nsight Compute. Limits per GPU are from NVIDIA's CUDA Programming Guide, "Compute Capabilities" table.</p>
+  </section>
+
+  <!-- ======================================================= 6 -->
+  <section class="lab panel" id="pixels">
+    <div class="lab-head">
+      <h2><span class="num">6</span>Pixels and warps</h2>
+      <p>A GPU shades an image with one thread per pixel, grouped into warps. Here every pixel of the Mandelbrot set needs a different number of iterations, and a warp runs as long as its slowest pixel. The right-hand image shows the cost: bright magenta pixels sat idle, waiting for a neighbour in the same warp. Change the warp shape and watch the waste move.</p>
+    </div>
+    <div class="lab-body">
+      <form class="knobs" onsubmit="return false">
+        <label>View <select id="pRegion">
+          <option value="full">Whole set</option>
+          <option value="seahorse">Seahorse valley</option>
+          <option value="elephant">Elephant valley</option>
+          <option value="spiral">Spiral arm</option>
+        </select></label>
+        <label>Max iterations <output id="pItO"></output><input type="range" id="pIt" min="16" max="512" step="16" value="96"></label>
+        <label>Warp size <select id="pWarp"><option value="4">4</option><option value="8" selected>8 (Pixelstorm)</option><option value="16">16</option><option value="32">32 (NVIDIA)</option><option value="64">64 (AMD wave64)</option></select></label>
+        <label>Warp shape <select id="pShape"><option value="row">Row of pixels (N x 1)</option><option value="tile" selected>Square-ish tile (for 32: 8 x 4)</option></select></label>
+        <label class="chk"><input type="checkbox" id="pGrid" checked> Draw warp outlines</label>
+      </form>
+      <div class="viz pix-viz">
+        <figure><canvas id="pImg" width="512" height="384" aria-label="Rendered Mandelbrot image"></canvas><figcaption>What the shader draws</figcaption></figure>
+        <figure><canvas id="pCost" width="512" height="384" aria-label="Idle time per pixel"></canvas><figcaption>Idle lane time: green = busy the whole warp, magenta = mostly waiting</figcaption></figure>
+      </div>
+      <div class="readout" id="pOut"></div>
+    </div>
+    <p class="real">In the real world: GPUs shade pixels in 2 x 2 "quads" and pack quads into warps, because nearby pixels usually take similar paths. That spatial coherence is why tiled warps waste less. Run <code>15 mandelbrot</code> in the <a href="visualizer.html">visualizer</a> to see the same effect in the Verilog.</p>
+  </section>
+</main>
+
+<footer class="lab-foot">Part of <a href="https://github.com/Normansrule/pixelstorm-gpu">pixelstorm-gpu</a>. Every lab is plain JavaScript in <code>web/js/labs.js</code>; read it next to the Verilog it imitates.</footer>
+<script src="js/labs.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+; 15 mandelbrot — the Mandelbrot set: beautiful, and the textbook case of divergence
+; -----------------------------------------------------------------------------
+; Each pixel is a complex number c. Iterate z = z*z + c from z = 0 and count
+; the steps until |z| > 2 (it "escapes"). Points that never escape are in the
+; set (black); the rest are colored by how fast they escaped.
+;
+; Every lane iterates a DIFFERENT number of times. A warp keeps issuing the
+; loop until its slowest lane is done, with the finished lanes idle. Along the
+; edge of the set, neighbouring pixels differ wildly, so SIMD efficiency drops.
+; (Try the "Pixels and warps" lab to see how warp shape changes this.)
+;
+; Arithmetic is Q16.16 fixed point: 1.0 = 65536, QMUL = (a * b) >> 16.
+; The image is 32 x 16 pixels covering x in [-2.5, 1.5], y in [-1, 1].
+;
+; CUDA version:
+;   __global__ void mandel(uint32_t* fb, float x0, float y0, float step, int maxit) {
+;       float cx = x0 + threadIdx.x * step, cy = y0 + blockIdx.x * step;
+;       float zx = 0, zy = 0; int it = 0;
+;       while (zx*zx + zy*zy <= 4.0f && it < maxit) {
+;           float t = zx*zx - zy*zy + cx; zy = 2*zx*zy + cy; zx = t; it++;
+;       }
+;       fb[blockIdx.x * 32 + threadIdx.x] = it == maxit ? 0 : palette(it);
+;   }
+; =============================================================================
+.kernel mandelbrot
+.grid 16                       ; 16 rows
+.block 32                      ; 32 columns
+.equ W, 32
+.equ H, 16
+.equ FB, 0x1000
+.equ ONE, 65536                ; 1.0 in Q16.16
+.equ STEP, ONE / 8             ; 0.125 per pixel
+.equ MAXIT, 12
+.param 0, FB
+.equ X0, STEP / 2 - 5 * ONE / 2      ; x of the first pixel center (-2.4375)
+.equ Y0, STEP / 2 - ONE              ; y of the first pixel center (-0.9375)
+.param 1, X0
+.param 2, Y0
+.param 3, STEP
+.param 4, MAXIT
+.param 5, 4 * ONE                     ; escape radius squared
+.fb FB, W, H
+
+    S2R  R0, TID               ; x
+    S2R  R1, CTAID             ; y
+    LDC  R9, c[3]
+    LDC  R2, c[1]
+    MAD  R2, R0, R9, R2        ; cx = x0 + x * step
+    LDC  R3, c[2]
+    MAD  R3, R1, R9, R3        ; cy = y0 + y * step
+    MOVI R4, 0                 ; zx
+    MOVI R5, 0                 ; zy
+    MOVI R6, 0                 ; iteration count
+    LDC  R10, c[5]             ; 4.0
+    LDC  R11, c[4]             ; max iterations
+loop:
+    QMUL R7, R4, R4            ; zx^2
+    QMUL R8, R5, R5            ; zy^2
+    ADD  R9, R7, R8
+    SETP.GT P0, R9, R10        ; escaped?
+    SETP.GE P1, R6, R11        ; out of iterations?
+@P0 BRA  done                  ; <- lanes leave the loop at different times
+@P1 BRA  done
+    QMUL R9, R4, R5
+    SHLI R9, R9, 1             ; 2 * zx * zy
+    ADD  R5, R9, R3            ; zy = 2 zx zy + cy
+    SUB  R4, R7, R8
+    ADD  R4, R4, R2            ; zx = zx^2 - zy^2 + cx
+    ADDI R6, R6, 1
+    BRA  loop
+done:                          ; min-PC scheduling reconverges the warp here
+    MOVI R9, 255
+    MULI R7, R6, 24
+    MIN  R7, R7, R9            ; red   = min(255, 24 * it)
+    MULI R8, R6, 10            ; green = 10 * it
+    MULI R12, R6, 12
+    MOVI R13, 170
+    SUB  R12, R13, R12
+    MOVI R13, 0
+    MAX  R12, R12, R13         ; blue  = max(0, 170 - 12 * it)
+    SHLI R7, R7, 16
+    SHLI R8, R8, 8
+    OR   R7, R7, R8
+    OR   R7, R7, R12
+    SETP.GE P2, R6, R11
+@P2 MOVI R7, 0                 ; never escaped: inside the set, black
+    SHLI R9, R1, 5
+    ADD  R9, R9, R0            ; pixel index
+    LDC  R13, c[0]
+    ADD  R13, R13, R9
+    STG  [R13], R7
+    EXIT

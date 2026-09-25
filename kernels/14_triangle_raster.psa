@@ -1,0 +1,114 @@
+; 14 triangle_raster — how a GPU draws a triangle: edge functions per pixel
+; -----------------------------------------------------------------------------
+; Every 3D image is made of triangles. Rasterization asks, for each pixel:
+; is its center inside the triangle? GPUs answer with three EDGE FUNCTIONS
+; (Pineda, 1988). For an edge V0 -> V1 and a pixel P:
+;
+;     E(P) = (V1y - V0y) * Px  -  (V1x - V0x) * Py  +  (V0y*(V1x - V0x) - V0x*(V1y - V0y))
+;
+; E >= 0 on the inner side of the edge. Inside the triangle all three are >= 0,
+; and each E divided by the triangle's area is a BARYCENTRIC weight: how close
+; P is to the opposite corner. Blending red, green and blue by those weights
+; gives the famous "hello triangle".
+;
+; Coordinates are doubled (half-pixel units) so pixel centers 2x+1 are integers.
+; The per-edge coefficients are computed by the assembler (.equ) and passed as
+; kernel arguments, exactly like a driver sets up a real rasterizer.
+;
+; CUDA version:
+;   __global__ void raster(uint32_t* fb, Edge e[3], int k, uint32_t bg) {
+;       int px = 2 * threadIdx.x + 1, py = 2 * blockIdx.x + 1;
+;       int w[3]; for (int i = 0; i < 3; i++) w[i] = e[i].a * px + e[i].b * py + e[i].c;
+;       bool inside = min(w[0], min(w[1], w[2])) >= 0;
+;       uint32_t rgb = ((w[0] * k) >> 16) << 16 | ((w[1] * k) >> 16) << 8 | ((w[2] * k) >> 16);
+;       fb[blockIdx.x * 32 + threadIdx.x] = inside ? rgb : bg;
+;   }
+;
+; Watch for: no branches at all. Inside/outside is a predicate (@!P0 MOV),
+; so every warp stays converged even along the triangle's edges.
+; =============================================================================
+.kernel triangle_raster
+.grid 32
+.block 32
+.equ W, 32
+.equ FB, 0x1000
+.equ BG, 0x101828              ; dark background
+; vertices in half-pixel units: A (top, red), B (bottom right, green), C (bottom left, blue)
+.equ AX, 32
+.equ AY, 4
+.equ BX, 60
+.equ BY, 58
+.equ CX, 4
+.equ CY, 52
+; edge opposite A is C -> B, opposite B is A -> C, opposite C is B -> A
+.equ EA_A, BY - CY
+.equ EA_B, -(BX - CX)
+.equ EA_C, CY * (BX - CX) - CX * (BY - CY)
+.equ EB_A, CY - AY
+.equ EB_B, -(CX - AX)
+.equ EB_C, AY * (CX - AX) - AX * (CY - AY)
+.equ EC_A, AY - BY
+.equ EC_B, -(AX - BX)
+.equ EC_C, BY * (AX - BX) - BX * (AY - BY)
+.equ AREA, EA_A * AX + EA_B * AY + EA_C      ; weight of A at A = twice the area
+.equ KCOL, 255 * 65536 / AREA                ; weight -> 0..255 via one QMUL
+.param 0, EA_A
+.param 1, EA_B
+.param 2, EA_C
+.param 3, EB_A
+.param 4, EB_B
+.param 5, EB_C
+.param 6, EC_A
+.param 7, EC_B
+.param 8, EC_C
+.param 9, FB
+.param 10, KCOL
+.param 11, BG
+.fb FB, W, W
+
+    S2R  R0, TID
+    SHLI R0, R0, 1
+    ADDI R0, R0, 1             ; Px = 2x + 1 (pixel center)
+    S2R  R1, CTAID
+    SHLI R1, R1, 1
+    ADDI R1, R1, 1             ; Py = 2y + 1
+    LDC  R5, c[0]              ; --- edge opposite A: weight of red
+    LDC  R6, c[1]
+    LDC  R7, c[2]
+    MUL  R6, R6, R1
+    ADD  R6, R6, R7
+    MAD  R2, R5, R0, R6        ; wA = a*Px + b*Py + c
+    LDC  R5, c[3]              ; --- edge opposite B: weight of green
+    LDC  R6, c[4]
+    LDC  R7, c[5]
+    MUL  R6, R6, R1
+    ADD  R6, R6, R7
+    MAD  R3, R5, R0, R6        ; wB
+    LDC  R5, c[6]              ; --- edge opposite C: weight of blue
+    LDC  R6, c[7]
+    LDC  R7, c[8]
+    MUL  R6, R6, R1
+    ADD  R6, R6, R7
+    MAD  R4, R5, R0, R6        ; wC
+    MIN  R5, R2, R3            ; inside if min(wA, wB, wC) >= 0
+    MIN  R5, R5, R4
+    MOVI R6, 0
+    SETP.GE P0, R5, R6
+    LDC  R7, c[10]             ; 255 / area as Q16.16
+    QMUL R2, R2, R7            ; red   = wA * 255 / area
+    QMUL R3, R3, R7            ; green = wB * 255 / area
+    QMUL R4, R4, R7            ; blue  = wC * 255 / area
+    SHLI R2, R2, 16
+    SHLI R3, R3, 8
+    OR   R2, R2, R3
+    OR   R2, R2, R4
+    LDC  R8, c[11]
+@!P0 MOV R2, R8                ; outside: background (predicated, no branch)
+    S2R  R9, CTAID
+    SHLI R9, R9, 5
+    S2R  R10, TID
+    ADD  R9, R9, R10           ; pixel index y * 32 + x
+    LDC  R11, c[9]
+    ADD  R11, R11, R9
+    STG  [R11], R2
+    EXIT

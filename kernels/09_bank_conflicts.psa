@@ -1,0 +1,34 @@
+; =============================================================================
+; 09 bank_conflicts — shared memory has 8 banks; one word per bank per cycle
+; -----------------------------------------------------------------------------
+; Access 1: s[t]        -> 8 different banks          -> 1 pass
+; Access 2: s[t * 8]    -> all lanes hit bank 0       -> 8 passes (8-way conflict)
+; Access 3: s[5]        -> same word for everyone     -> 1 pass (broadcast)
+; Access 4: s[t * 2]    -> pairs of lanes share banks -> 2 passes
+; =============================================================================
+.kernel bank_conflicts
+.grid 1
+.block 8
+.equ OUT, 0x780
+.param 0, OUT
+.dump OUT, 32, [s[t]][s[8t]][s[5]][s[2t]]
+
+    S2R   R0, TID
+    MULI  R1, R0, 100
+    SHLI  R2, R0, 3             ; 8t
+    STS   [R2], R1              ; fill s[8t] = 100t   (8-way conflict on store)
+    STS   [R0+64], R1           ; s[64+t]             (conflict-free)
+    MOVI  R9, 5
+    STS   [R9], R9              ; everyone writes s[5] = 5 (same word)
+    LDS   R3, [R0+64]           ; 1 pass
+    LDS   R4, [R2]              ; 8 passes
+    LDS   R5, [R9]              ; broadcast, 1 pass
+    SHLI  R6, R0, 1
+    LDS   R7, [R6+64]           ; stride 2: 2 passes
+    LDC   R8, c[0]
+    ADD   R8, R8, R0
+    STG   [R8], R3
+    STG   [R8+8], R4
+    STG   [R8+16], R5
+    STG   [R8+24], R7
+    EXIT

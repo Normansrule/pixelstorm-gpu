@@ -1,0 +1,13 @@
+{
+  "name": "pixelstorm-gpu",
+  "version": "1.0.0",
+  "description": "Educational GPU in Verilog with a CUDA-inspired ISA, cycle-exact golden model and interactive visualizer",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node tools/pixelstorm.js test",
+    "traces": "node tools/pixelstorm.js bundle && node tools/pixelstorm.js traces",
+    "serve": "python3 -m http.server 8000 -d web"
+  }
+}

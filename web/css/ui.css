@@ -1,0 +1,100 @@
+/* =============================================================================
+ * ui.css — Pixelstorm's animated component layer (dark, "lit silicon" look).
+ * Ideas adapted from React Bits, Magic UI, Animate UI and motion-primitives,
+ * written as plain CSS so the site needs no build step.
+ *   .spotlight   card with a glow that follows the cursor
+ *   .beam        animated light travelling around a border
+ *   .shimmer     moving highlight across text
+ *   .marquee     endless horizontal scroll
+ *   .grid-bg     fading circuit grid background
+ *   [data-reveal] fades and rises into view on scroll
+ * ========================================================================== */
+:root.ui {
+  --bg0: #05070B; --bg1: #0A0F16; --bg2: #101823; --card: rgba(16, 24, 35, .72);
+  --edge: rgba(148, 170, 200, .14); --edge2: rgba(148, 170, 200, .28);
+  --tx: #E8EEF6; --tx2: #9DADC1; --tx3: #64748A;
+  --blue: #5B84FF; --green: #2DD4A0; --amber: #FFB938; --magenta: #FF4D8D; --violet: #A07DF0; --cyan: #38D6FF;
+  --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --f-cond: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+.ui body { margin: 0; background: var(--bg0); color: var(--tx); font: 16px/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+.ui a { color: inherit; }
+.ui ::selection { background: rgba(91, 132, 255, .35); }
+.ui :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+
+/* ---------- navigation ---------- */
+.unav { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; gap: 18px; padding: calc(12px + env(safe-area-inset-top, 0px)) 24px 12px; transition: background .3s, border-color .3s; border-bottom: 1px solid transparent; }
+.unav.scrolled { background: rgba(5, 7, 11, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom-color: var(--edge); }
+.ulogo { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 22px var(--f-cond); letter-spacing: .01em; }
+.ulogo svg { width: 30px; height: 30px; }
+.ulinks { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
+.ulinks a { text-decoration: none; color: var(--tx2); font: 600 15.5px var(--f-cond); padding: 7px 12px; border-radius: 999px; transition: color .2s, background .2s; }
+.ulinks a:hover { color: var(--tx); background: rgba(255, 255, 255, .06); }
+.ulinks a[aria-current="page"] { color: var(--tx); background: rgba(91, 132, 255, .16); }
+.ulinks a.gh { border: 1px solid var(--edge2); }
+
+/* ---------- buttons ---------- */
+.ubtn { position: relative; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 600 16px var(--f-body); padding: 12px 20px; border-radius: 12px; border: 1px solid var(--edge2); color: var(--tx); background: rgba(255, 255, 255, .04); cursor: pointer; transition: transform .2s, background .2s, border-color .2s; }
+.ubtn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .35); }
+.ubtn.primary { background: linear-gradient(135deg, #3B6BFF, #7A4FD6); border-color: transparent; box-shadow: 0 8px 30px rgba(91, 132, 255, .35); }
+.ubtn.primary:hover { box-shadow: 0 10px 40px rgba(91, 132, 255, .5); }
+.ubtn .arr { transition: transform .2s; } .ubtn:hover .arr { transform: translateX(3px); }
+
+/* ---------- pill / eyebrow ---------- */
+.upill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font: 600 14px var(--f-cond); letter-spacing: .02em; color: var(--tx2); background: rgba(16, 24, 35, .7); }
+.upill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: upulse 2s infinite; }
+@keyframes upulse { 50% { opacity: .35; } }
+
+/* ---------- border beam ---------- */
+@property --beam-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.beam { position: relative; isolation: isolate; }
+.beam::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1;
+  background: conic-gradient(from var(--beam-angle), transparent 0 70%, var(--cyan) 80%, var(--violet) 88%, transparent 96%), var(--edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: ubeam 4s linear infinite; }
+@keyframes ubeam { to { --beam-angle: 360deg; } }
+
+/* ---------- spotlight card ---------- */
+.spotlight { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--edge); border-radius: 20px; transition: border-color .3s, transform .3s; }
+.spotlight::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(91, 132, 255, .16), transparent 60%); }
+.spotlight:hover { border-color: var(--edge2); }
+.spotlight:hover::after { opacity: 1; }
+
+/* ---------- shimmer text ---------- */
+.shimmer { background: linear-gradient(110deg, #E8EEF6 20%, #9CC3FF 35%, #F0D9FF 45%, #E8EEF6 60%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ushimmer 6s ease-in-out infinite; }
+@keyframes ushimmer { 0% { background-position: 100% 0; } 100% { background-position: -150% 0; } }
+.grad { background: linear-gradient(90deg, var(--cyan), var(--blue) 40%, var(--violet) 70%, var(--magenta)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- marquee ---------- */
+.marquee { overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; gap: 12px; width: max-content; animation: umarq var(--dur, 60s) linear infinite; }
+.marquee.rev .marquee-track { animation-direction: reverse; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes umarq { to { transform: translateX(-50%); } }
+
+/* ---------- grid background ---------- */
+.grid-bg { position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(rgba(148, 170, 200, .07) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 170, 200, .07) 1px, transparent 1px);
+  background-size: 44px 44px; -webkit-mask: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%); mask: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%); }
+
+/* ---------- reveal ---------- */
+[data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); }
+[data-reveal].in { opacity: 1; transform: none; }
+
+/* ---------- code / terminal ---------- */
+.uterm { position: relative; background: #070A0F; border: 1px solid var(--edge); border-radius: 16px; overflow: hidden; }
+.uterm-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--edge); background: rgba(255, 255, 255, .02); }
+.uterm-bar i { width: 11px; height: 11px; border-radius: 50%; background: #FF5F57; } .uterm-bar i:nth-child(2) { background: #FEBC2E; } .uterm-bar i:nth-child(3) { background: #28C840; }
+.uterm-bar span { margin-left: 8px; font: 13px var(--f-mono); color: var(--tx3); }
+.uterm pre { margin: 0; padding: 16px 18px; overflow-x: auto; font: 13.5px/1.7 var(--f-mono); color: #CFE0F5; }
+.uterm .c { color: var(--tx3); } .uterm .p { color: var(--green); } .uterm .k { color: var(--cyan); }
+.ucopy { position: absolute; top: 7px; right: 10px; font: 600 12.5px var(--f-body); color: var(--tx2); background: rgba(255, 255, 255, .06); border: 1px solid var(--edge); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.ucopy:hover { color: var(--tx); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui *, .ui *::before, .ui *::after { animation: none !important; transition: none !important; }
+  [data-reveal] { opacity: 1; transform: none; }
+}

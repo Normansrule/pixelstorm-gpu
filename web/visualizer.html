@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixelstorm visualizer — watch instructions move through a GPU</title>
+<meta name="description" content="Interactive, cycle-by-cycle visualizer for an open-source educational GPU written in Verilog RTL.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="3" y="3" width="26" height="26" rx="3" class="bm-die"/>
+      <g class="bm-lanes"><rect x="7" y="8" width="3" height="16"/><rect x="12" y="8" width="3" height="16"/><rect x="17" y="8" width="3" height="16"/><rect x="22" y="8" width="3" height="16"/></g>
+    </svg>
+    <div>
+      <h1><a href="index.html">Pixelstorm</a></h1>
+      <p class="tag">Visualizer: the Verilog GPU, one clock cycle at a time</p>
+    </div>
+  </div>
+  <nav class="site-nav" aria-label="Site">
+    <a href="index.html">Home</a>
+    <a href="chip.html">3D Chip</a>
+    <a href="visualizer.html" aria-current="page">Visualizer</a>
+    <a href="labs.html">Labs</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu">GitHub</a>
+  </nav>
+  <div class="controls-top">
+    <label class="fld">Kernel
+      <select id="kernelSel" aria-label="Kernel"></select>
+    </label>
+    <label class="fld">Trace from
+      <select id="sourceSel" aria-label="Trace source">
+        <option value="rtl">RTL simulation (Icarus Verilog)</option>
+        <option value="sim">Golden model in this browser</option>
+      </select>
+    </label>
+    <label class="btn ghost file-btn">Open trace file
+      <input type="file" id="traceFile" accept=".json,application/json">
+    </label>
+    <button class="btn" id="tourBtn" type="button">Guided tour</button>
+    <button class="btn ghost" id="themeBtn" type="button" aria-label="Switch light or dark theme">Dark theme</button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ======================= left: code ======================= -->
+  <section class="panel code-panel" aria-label="Kernel source">
+    <div class="tabs" role="tablist">
+      <button role="tab" class="tab on" data-tab="src" aria-selected="true">Kernel</button>
+      <button role="tab" class="tab" data-tab="isa" aria-selected="false">Instruction set</button>
+      <button role="tab" class="tab" data-tab="edit" aria-selected="false">Edit and run</button>
+    </div>
+    <div class="tabpane on" id="tab-src">
+      <div class="kernel-head">
+        <div id="kernelTitle" class="kernel-title"></div>
+        <div id="kernelLaunch" class="kernel-launch"></div>
+      </div>
+      <ol id="codeView" class="code" aria-live="off"></ol>
+    </div>
+    <div class="tabpane" id="tab-isa">
+      <p class="hint">Every Pixelstorm instruction next to the CUDA, PTX (Parallel Thread Execution) or SASS (the native NVIDIA machine code) operation it imitates.</p>
+      <div id="isaTable" class="isa"></div>
+    </div>
+    <div class="tabpane" id="tab-edit">
+      <p class="hint">Change the kernel, then assemble it and run it on the cycle-level golden model right here. The model matches the Verilog cycle for cycle.</p>
+      <textarea id="editor" spellcheck="false" aria-label="Kernel assembly source"></textarea>
+      <div class="edit-row">
+        <button class="btn" id="runBtn" type="button">Assemble and run</button>
+        <label class="fld small">SMs <select id="smsSel"><option>1</option><option selected>2</option></select></label>
+        <label class="fld small">DRAM latency <input id="latIn" type="number" min="1" max="200" value="8"></label>
+      </div>
+      <div id="asmMsg" class="asm-msg" role="status"></div>
+    </div>
+  </section>
+
+  <!-- ======================= center: hardware ======================= -->
+  <section class="center" aria-label="GPU block diagram">
+    <div class="tour panel" id="tour" hidden>
+      <div class="tour-top"><span class="tour-step" id="tourStep"></span><h2 id="tourTitle"></h2>
+        <div class="tour-nav"><button class="btn ghost" id="tourPrev" type="button">Back</button><button class="btn" id="tourNext" type="button">Next stop</button><button class="btn ghost" id="tourClose" type="button" aria-label="Close tour">Close</button></div></div>
+      <p id="tourText"></p>
+    </div>
+    <div class="inst-strip panel" id="instStrip"></div>
+    <div id="smHost"></div>
+    <div class="panel memsys-wrap"><svg id="memsys" viewBox="0 0 960 96" role="img" aria-label="Memory system: SM ports, arbiter and DRAM"></svg></div>
+    <div class="panel narration" id="narration" aria-live="polite"></div>
+  </section>
+
+  <!-- ======================= right: inspector ======================= -->
+  <section class="panel inspector" aria-label="Framebuffer, registers and memory">
+    <div id="fbWrap" class="fb-wrap" hidden>
+      <h2>Framebuffer <span class="muted" id="fbInfo"></span></h2>
+      <canvas id="fbCanvas" aria-label="The image this kernel is drawing, as stored in global memory"></canvas>
+      <p class="fb-cap" id="fbCap"></p>
+    </div>
+    <div class="insp-head">
+      <h2>Registers</h2>
+      <div class="insp-sel">
+        <select id="inspSm" aria-label="Streaming Multiprocessor"></select>
+        <select id="inspWarp" aria-label="Warp"></select>
+        <label class="chk"><input type="checkbox" id="followChk" checked> Follow</label>
+        <label class="chk"><input type="checkbox" id="hexChk"> Hex</label>
+      </div>
+    </div>
+    <div class="regs-wrap"><table id="regTable" class="regs"></table></div>
+    <h2>Global memory</h2>
+    <div id="gmemView" class="memview"></div>
+    <h2>Shared memory <span id="smemWhich" class="muted"></span></h2>
+    <div id="smemView" class="memview"></div>
+  </section>
+</main>
+
+<footer class="transport panel" aria-label="Playback">
+  <div class="tp-row">
+    <button class="btn icon" id="startBtn" type="button" title="Go to cycle 0 (Home)" aria-label="Go to start">⏮</button>
+    <button class="btn icon" id="backBtn" type="button" title="Back one cycle (Left arrow)" aria-label="Back one cycle">◀</button>
+    <button class="btn play" id="playBtn" type="button" title="Play or pause (Space)">Play</button>
+    <button class="btn icon" id="stepBtn" type="button" title="Forward one cycle (Right arrow)" aria-label="Forward one cycle">▶</button>
+    <button class="btn" id="nextBtn" type="button" title="Jump to the next instruction commit (N)">Next instruction</button>
+    <label class="fld small">Speed
+      <select id="speedSel">
+        <option value="2">2 cycles/s</option>
+        <option value="6" selected>6 cycles/s</option>
+        <option value="20">20 cycles/s</option>
+        <option value="80">80 cycles/s</option>
+        <option value="400">400 cycles/s</option>
+      </select>
+    </label>
+    <div class="cycle">cycle <output id="cycleOut">0</output> of <span id="cycleMax">0</span></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <input type="range" id="scrub" min="0" max="100" value="0" aria-label="Cycle">
+  <div class="timeline-wrap">
+    <canvas id="timeline" aria-label="Timeline of every warp instruction; click to jump"></canvas>
+    <label class="fld small zoom">Zoom <input type="range" id="zoom" min="1" max="40" value="1"></label>
+  </div>
+  <div class="legend">
+    <span><i class="sw g-alu"></i>arithmetic</span>
+    <span><i class="sw g-memory"></i>memory</span>
+    <span><i class="sw g-control"></i>control flow</span>
+    <span><i class="sw g-warp"></i>warp-wide (vote, shuffle)</span>
+    <span><i class="sw g-data"></i>moves and predicates</span>
+    <span><i class="sw div"></i>divergent issue</span>
+  </div>
+</footer>
+
+<script src="js/pixelstorm.js"></script>
+<script src="js/examples.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

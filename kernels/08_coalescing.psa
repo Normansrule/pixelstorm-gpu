@@ -1,0 +1,35 @@
+; =============================================================================
+; 08 coalescing — same amount of data, very different memory traffic
+; -----------------------------------------------------------------------------
+; Load 1: lane l reads in[i]        -> 8 lanes hit 2 cache lines  = 2 transactions
+; Load 2: lane l reads in[i * 4]    -> 8 lanes hit 8 cache lines  = 8 transactions
+; Load 3: every lane reads in[0]    -> 1 line, broadcast           = 1 transaction
+;
+; Compare the "txn" and "MEM cycles" of the three LDG instructions in the
+; visualizer. This is why CUDA programmers obsess over data layout
+; (structure-of-arrays vs array-of-structures).
+; =============================================================================
+.kernel coalescing
+.grid 1
+.block 8
+.equ IN,  0x000
+.equ OUT, 0x700
+.param 0, IN
+.param 1, OUT
+.seq  IN, 64, 0, 1
+.dump OUT, 24, [contiguous x8][strided x8][broadcast x8]
+
+    S2R   R0, TID
+    LDC   R1, c[0]
+    ADD   R2, R1, R0
+    LDG   R3, [R2]              ; contiguous
+    SHLI  R4, R0, 2
+    ADD   R4, R1, R4
+    LDG   R5, [R4]              ; stride 4
+    LDG   R6, [R1]              ; broadcast
+    LDC   R7, c[1]
+    ADD   R7, R7, R0
+    STG   [R7], R3
+    STG   [R7+8], R5
+    STG   [R7+16], R6
+    EXIT

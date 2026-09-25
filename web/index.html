@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en" class="ui">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixelstorm — an open-source GPU you can watch paint</title>
+<meta name="description" content="Pixelstorm is an open-source GPU in Verilog that renders shaders, triangles and fractals. Explore it in 3D, replay it cycle by cycle, and learn how GPUs work in a 16-chapter course.">
+<meta property="og:title" content="Pixelstorm — an open-source GPU you can watch paint">
+<meta property="og:description" content="A complete GPU in Verilog with a 3D chip explorer, a cycle-by-cycle visualizer, interactive labs and a free course.">
+<meta property="og:image" content="https://normansrule.github.io/pixelstorm-gpu/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#05070B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+<nav class="unav" aria-label="Site">
+  <a class="ulogo" href="index.html" aria-label="Pixelstorm home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="url(#lg)" stroke-width="2"/><g fill="url(#lg)"><rect x="7" y="8" width="3.2" height="16" rx="1"/><rect x="12.3" y="8" width="3.2" height="16" rx="1"/><rect x="17.6" y="8" width="3.2" height="16" rx="1"/><rect x="22.9" y="8" width="3.2" height="16" rx="1"/></g><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38D6FF"/><stop offset=".55" stop-color="#5B84FF"/><stop offset="1" stop-color="#FF4D8D"/></linearGradient></defs></svg>
+    Pixelstorm
+  </a>
+  <div class="ulinks">
+    <a href="index.html" aria-current="page">Home</a>
+    <a href="chip.html">3D Chip</a>
+    <a href="visualizer.html">Visualizer</a>
+    <a href="labs.html">Labs</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
+    <a class="gh" href="https://github.com/Normansrule/pixelstorm-gpu">GitHub</a>
+  </div>
+</nav>
+
+<!-- =============================================================== HERO -->
+<header class="hero">
+  <canvas id="storm" aria-hidden="true"></canvas>
+  <img class="storm-fallback" src="img/fig-gallery.svg" alt="" hidden>
+  <div class="hero-shade"></div>
+  <div class="grid-bg"></div>
+  <div class="hero-inner">
+    <span class="upill beam" data-reveal><span class="dot"></span>Open-source GPU in Verilog, verified cycle for cycle</span>
+    <h1 data-reveal="80"><span class="shimmer">A GPU you can</span><br><span class="grad">watch paint.</span></h1>
+    <p class="lede" data-reveal="160">Pixelstorm is a complete Graphics Processing Unit (GPU) written in register-transfer level (RTL) Verilog. It shades pixels, rasterizes triangles and renders fractals, and every clock cycle of it is yours to explore: in 3D, cycle by cycle, and line by line.</p>
+    <div class="cta" data-reveal="240">
+      <a class="ubtn primary" href="chip.html">Explore the chip in 3D <span class="arr">→</span></a>
+      <a class="ubtn" href="visualizer.html?tour">Take the guided tour</a>
+      <a class="ubtn" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Start the course</a>
+    </div>
+    <p class="hero-counter" data-reveal="320"><b id="pxCount">0</b> pixels shaded by your own GPU since you opened this page. The background is a pixel shader: one thread per pixel, the same idea Pixelstorm implements in Verilog. <span class="hint">Move the pointer to steer it.</span></p>
+  </div>
+  <a class="scroll-cue" href="#story" aria-label="Scroll to the story"><span></span></a>
+</header>
+
+<!-- =============================================================== MARQUEE -->
+<section class="marquee-band" aria-label="The Pixelstorm instruction set">
+  <div class="marquee" style="--dur:70s"><div class="marquee-track" id="mq1"></div></div>
+  <div class="marquee rev" style="--dur:80s"><div class="marquee-track" id="mq2"></div></div>
+</section>
+
+<!-- =============================================================== STATS -->
+<section class="stats wrap" aria-label="Pixelstorm in numbers">
+  <div class="stat" data-reveal><b data-ticker="15">0</b><span>example kernels, from vector add to the Mandelbrot set</span></div>
+  <div class="stat" data-reveal="60"><b data-ticker="40">0</b><span>instructions, each mapped to CUDA, PTX and SASS</span></div>
+  <div class="stat" data-reveal="120"><b data-ticker="30">0</b><span>RTL test runs on every push, 1 and 2 SMs</span></div>
+  <div class="stat" data-reveal="180"><b>0</b><span>cycles of disagreement between the Verilog and the golden model</span></div>
+  <div class="stat" data-reveal="240"><b data-ticker="16">0</b><span>chapters with figures drawn from real simulation traces</span></div>
+</section>
+
+<!-- =============================================================== STORY -->
+<section class="story wrap" id="story">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">The idea in five scrolls</span>
+    <h2>From one instruction to a <span class="grad">storm of pixels</span></h2>
+    <p>Everything below is real: the image, the order it was painted in, and which Streaming Multiprocessor (SM) painted each pixel all come from a Verilog simulation of kernel <code>15_mandelbrot.psa</code>.</p>
+  </div>
+  <div class="story-grid">
+    <div class="story-stage">
+      <div class="story-canvas-wrap spotlight">
+        <canvas id="storyCanvas" aria-label="Animated diagram that follows the story steps"></canvas>
+        <div class="story-hud" id="storyHud"></div>
+      </div>
+    </div>
+    <div class="story-steps">
+      <article class="step" data-step="0"><span class="k">01</span><h3>One thread, one pixel</h3><p>A pixel shader is a tiny program that decides one pixel's color. A GPU runs it as a <em>thread</em>: its own registers, its own coordinates, the same code as everyone else.</p></article>
+      <article class="step" data-step="1"><span class="k">02</span><h3>Eight threads, one instruction</h3><p>Fetching and decoding an instruction is expensive, so the GPU does it once for a <em>warp</em> of threads and feeds 8 lanes (32 on NVIDIA hardware) in lockstep. Same instruction, different data.</p></article>
+      <article class="step" data-step="2"><span class="k">03</span><h3>512 threads, two SMs</h3><p>The 32 × 16 image is one launch: 16 blocks of 32 threads, each block split into 4 warps. The dispatcher hands blocks to whichever SM is free. Blue rows ran on SM 0, violet on SM 1.</p></article>
+      <article class="step" data-step="3"><span class="k">04</span><h3>The storm</h3><p>Scroll and the image paints itself in the exact order the Verilog wrote each pixel to memory. Both SMs work at once, block by block, 23,420 clock cycles in total.</p></article>
+      <article class="step" data-step="4"><span class="k">05</span><h3>When lockstep breaks</h3><p>Each Mandelbrot pixel needs a different number of iterations, and a warp waits for its slowest lane. Magenta shows idle lanes: the cost of <em>divergence</em>, and the first thing GPU programmers learn to design around.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== BENTO -->
+<section class="bento-sec wrap">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">Everything here is interactive</span>
+    <h2>Pick a way in</h2>
+  </div>
+  <div class="bento">
+    <a class="card spotlight c-chip" href="chip.html" data-reveal>
+      <div class="card-media chip-media"><img src="img/screenshot-chip.png" alt="The 3D chip explorer" loading="lazy"><span class="play">▶</span></div>
+      <div class="card-text"><span class="tag t-blue">3D Chip Explorer</span><h3>Fly around the die while it runs</h3><p>Both SMs, their 8 lanes, the load/store units, the memory arbiter and DRAM, rendered in 3D and driven by real RTL traces. Lanes light up as they execute, memory requests fly to DRAM, and the framebuffer paints above the chip. Click any block to learn what it does.</p><span class="go">Launch the explorer →</span></div>
+    </a>
+    <a class="card spotlight c-fb" href="visualizer.html?k=triangle_raster" data-reveal="60">
+      <canvas class="mini" id="miniFb" width="256" height="256" aria-label="Triangle being rasterized"></canvas>
+      <div class="card-text"><span class="tag t-green">Visualizer</span><h3>Replay every cycle</h3><p>Scheduler, lanes, memory, registers and a live framebuffer. Twelve-stop guided tour.</p></div>
+    </a>
+    <a class="card spotlight c-lanes" href="visualizer.html?k=divergence" data-reveal="120">
+      <svg class="mini" id="miniLanes" viewBox="0 0 320 200" aria-label="Eight lanes executing in lockstep, then diverging"></svg>
+      <div class="card-text"><span class="tag t-magenta">Divergence</span><h3>Lockstep, and when it breaks</h3><p id="lanesCap">One warp, 8 lanes, a branch.</p></div>
+    </a>
+    <a class="card spotlight c-labs" href="labs.html" data-reveal="60">
+      <canvas class="mini" id="miniCoal" width="320" height="200" aria-label="Lanes coalescing memory requests into lines"></canvas>
+      <div class="card-text"><span class="tag t-amber">Labs</span><h3>Six experiments with sliders</h3><p>Coalescing, bank conflicts, divergence, latency hiding, occupancy, pixels and warps.</p></div>
+    </a>
+    <a class="card spotlight c-code" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/06-reading-the-rtl.md" data-reveal="120">
+      <div class="code-roll" aria-hidden="true"><pre id="codeRoll"></pre></div>
+      <div class="card-text"><span class="tag t-violet">The Verilog</span><h3>~980 lines, meant to be read</h3><p>A guided reading of the RTL with exact line numbers, generated from the source.</p></div>
+    </a>
+    <a class="card spotlight c-proof" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md#how-correctness-is-checked" data-reveal="60">
+      <div class="uterm mini-term"><div class="uterm-bar"><i></i><i></i><i></i><span>./pixelstorm test</span></div><pre id="testTerm"></pre></div>
+      <div class="card-text"><span class="tag t-cyan">Proof</span><h3>Verified cycle for cycle</h3><p>Every kernel runs on the Verilog and the golden model; every commit, memory word and pixel must match.</p></div>
+    </a>
+  </div>
+</section>
+
+<!-- =============================================================== GALLERY -->
+<section class="gallery wrap" id="gallery">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">Rendered by the Verilog</span>
+    <h2>Drag through time</h2>
+    <p>Three framebuffers, each pixel exactly where and when the RTL simulation wrote it. Scrub the slider, or switch the view to see which SM painted what.</p>
+  </div>
+  <div class="gal-controls" data-reveal>
+    <button class="ubtn" id="galPlay" type="button">Pause</button>
+    <input type="range" id="galScrub" min="0" max="1000" value="0" aria-label="Simulation progress">
+    <span class="gal-pct" id="galPct">0%</span>
+    <div class="seg" role="radiogroup" aria-label="Color mode">
+      <button type="button" class="on" data-mode="color" role="radio" aria-checked="true">Color</button>
+      <button type="button" data-mode="sm" role="radio" aria-checked="false">Which SM</button>
+      <button type="button" data-mode="time" role="radio" aria-checked="false">When</button>
+    </div>
+  </div>
+  <div class="gal-grid">
+    <figure class="spotlight" data-reveal><canvas data-k="gradient_shader" width="320" height="320"></canvas><figcaption><b>Gradient shader</b><span>one thread per pixel, 100% SIMD efficiency</span><a href="visualizer.html?k=gradient_shader">Open in visualizer →</a></figcaption></figure>
+    <figure class="spotlight" data-reveal="80"><canvas data-k="triangle_raster" width="320" height="320"></canvas><figcaption><b>Triangle rasterizer</b><span>edge functions, barycentric color</span><a href="visualizer.html?k=triangle_raster">Open in visualizer →</a></figcaption></figure>
+    <figure class="spotlight" data-reveal="160"><canvas data-k="mandelbrot" width="320" height="160"></canvas><figcaption><b>Mandelbrot set</b><span>Q16.16 iterations, 73% SIMD efficiency</span><a href="visualizer.html?k=mandelbrot">Open in visualizer →</a></figcaption></figure>
+  </div>
+</section>
+
+<!-- =============================================================== COURSE -->
+<section class="course wrap">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">A free course, 16 chapters</span>
+    <h2>Learn it properly, down to the wires</h2>
+  </div>
+  <div class="parts">
+    <a class="part spotlight" data-reveal href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/01-what-is-a-gpu.md"><span class="pn">Part 1</span><h3>Concepts</h3><p>What GPUs are for, SIMT (Single Instruction, Multiple Threads), and the 40-instruction ISA (Instruction Set Architecture).</p><span class="chs">Chapters 1 to 3</span></a>
+    <a class="part spotlight" data-reveal="60" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/04-microarchitecture.md"><span class="pn">Part 2</span><h3>The hardware</h3><p>The block diagram, one instruction through every cycle, and a guided reading of the Verilog.</p><span class="chs">Chapters 4 to 6</span></a>
+    <a class="part spotlight" data-reveal="120" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/07-divergence.md"><span class="pn">Part 3</span><h3>Performance</h3><p>Divergence, coalescing, bank conflicts, barriers, shuffles and atomics.</p><span class="chs">Chapters 7 to 9</span></a>
+    <a class="part spotlight" data-reveal="180" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/11-graphics.md"><span class="pn">Part 4</span><h3>Applications and graphics</h3><p>Fifteen kernels, a triangle rasterizer and the Mandelbrot set.</p><span class="chs">Chapters 10 and 11</span></a>
+    <a class="part spotlight" data-reveal="240" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/12-make-it-better.md"><span class="pn">Part 5</span><h3>Build on it</h3><p>Nine exercises toward a faster GPU, and how it maps onto an NVIDIA H100.</p><span class="chs">Chapters 12 and 13</span></a>
+  </div>
+</section>
+
+<!-- =============================================================== RUN -->
+<section class="run wrap">
+  <div class="run-grid">
+    <div data-reveal>
+      <span class="eyebrow">Run the real thing</span>
+      <h2>Your machine, the actual Verilog</h2>
+      <p>On Ubuntu or Windows through WSL2 (Windows Subsystem for Linux), five commands take you from nothing to a waveform of the Mandelbrot kernel. Every figure in the course is regenerated from your own simulation.</p>
+      <a class="ubtn primary" href="https://github.com/Normansrule/pixelstorm-gpu">View on GitHub <span class="arr">→</span></a>
+    </div>
+    <div class="uterm" data-copy data-reveal="120">
+      <div class="uterm-bar"><i></i><i></i><i></i><span>bash</span></div>
+<pre><span class="k">git</span> clone https://github.com/Normansrule/pixelstorm-gpu.git
+<span class="k">cd</span> pixelstorm-gpu
+<span class="k">bash</span> scripts/setup_ubuntu.sh      <span class="c"># Icarus Verilog, Verilator, GTKWave, Node.js</span>
+<span class="k">./pixelstorm</span> test                 <span class="c"># RTL == golden model, every kernel</span>
+<span class="k">./pixelstorm</span> rtl mandelbrot --vcd  <span class="c"># the fractal, as a waveform</span>
+<span class="k">make</span> serve                        <span class="c"># this site at localhost:8000</span></pre>
+    </div>
+  </div>
+</section>
+
+<footer class="ufoot wrap">
+  <span>Pixelstorm is MIT licensed. Built for learning, and for anyone who wants to design a better GPU.</span>
+  <span>Animation: GSAP. 3D: three.js. The hero is a WebGL shader running on your GPU.</span>
+</footer>
+
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

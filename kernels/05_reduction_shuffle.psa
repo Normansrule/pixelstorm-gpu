@@ -1,0 +1,40 @@
+; =============================================================================
+; 05 reduction_shuffle — warp-level sum with SHFL.DOWN, then one atomic per warp
+; -----------------------------------------------------------------------------
+;   int v = in[i];
+;   for (int off = 4; off > 0; off >>= 1)          // warp size 8 here
+;       v += __shfl_down_sync(0xff, v, off);
+;   if ((threadIdx.x & 7) == 0) atomicAdd(out, v);
+;
+; No shared memory, no barrier: registers move directly between lanes.
+; =============================================================================
+.kernel reduction_shuffle
+.grid 4
+.block 32
+.equ IN,  0x000
+.equ OUT, 0x500
+.param 0, IN
+.param 1, OUT
+.seq  IN, 128, 1, 1
+.dump OUT, 1, total = 128*129/2 = 8256
+
+    S2R   R0, TID
+    S2R   R1, CTAID
+    S2R   R2, NTID
+    MAD   R3, R1, R2, R0
+    LDC   R4, c[0]
+    ADD   R4, R4, R3
+    LDG   R5, [R4]
+    SHFL.DOWN R6, R5, 4          ; lane l gets v from lane l+4
+    ADD   R5, R5, R6
+    SHFL.DOWN R6, R5, 2
+    ADD   R5, R5, R6
+    SHFL.DOWN R6, R5, 1
+    ADD   R5, R5, R6             ; lane 0 now holds the warp's sum
+    S2R   R7, LANEID
+    MOVI  R8, 0
+    SETP.NE P0, R7, R8
+@P0 EXIT
+    LDC   R9, c[1]
+    ATOM.ADD R10, [R9], R5       ; out[0] += warp sum
+    EXIT

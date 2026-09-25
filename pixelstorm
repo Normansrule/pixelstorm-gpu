@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Pixelstorm command-line tool. Same as: node tools/pixelstorm.js <command> ...
+#   ./pixelstorm help
+exec node "$(dirname "$0")/tools/pixelstorm.js" "$@"

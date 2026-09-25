@@ -1,0 +1,71 @@
+[*] Pixelstorm GPU — default GTKWave view (load with: gtkwave build/<kernel>/wave.vcd sim/wave.gtkw)
+[timestart] 0
+*-14.000000 0
+@28
+tb_gpu.clk
+tb_gpu.dut.running
+tb_gpu.done
+@24
+tb_gpu.cycle[31:0]
+-SM 0: scheduler and front end
+@24
+tb_gpu.dut.g_sm[0].u_sm.state[2:0]
+tb_gpu.dut.g_sm[0].u_sm.cur_blk[15:0]
+tb_gpu.dut.g_sm[0].u_sm.cw[1:0]
+tb_gpu.dut.g_sm[0].u_sm.cpc[9:0]
+@22
+tb_gpu.dut.g_sm[0].u_sm.ir[31:0]
+@24
+tb_gpu.dut.g_sm[0].u_sm.d_op[5:0]
+@28
+tb_gpu.dut.g_sm[0].u_sm.cact[7:0]
+tb_gpu.dut.g_sm[0].u_sm.cexe[7:0]
+tb_gpu.dut.g_sm[0].u_sm.w_wait[3:0]
+tb_gpu.dut.g_sm[0].u_sm.w_done[3:0]
+-SM 0: load/store unit
+@28
+tb_gpu.dut.g_sm[0].u_sm.lpend[7:0]
+tb_gpu.dut.g_sm[0].u_sm.lserve[7:0]
+tb_gpu.dut.g_sm[0].u_sm.s_sel[7:0]
+@24
+tb_gpu.dut.g_sm[0].u_sm.txn_cnt[15:0]
+@28
+tb_gpu.dut.g_sm[0].u_sm.mreq_valid
+tb_gpu.dut.g_sm[0].u_sm.mresp_valid
+@22
+tb_gpu.dut.g_sm[0].u_sm.mreq_addr[31:0]
+-SM 1: scheduler and front end
+@24
+tb_gpu.dut.g_sm[1].u_sm.state[2:0]
+tb_gpu.dut.g_sm[1].u_sm.cur_blk[15:0]
+tb_gpu.dut.g_sm[1].u_sm.cw[1:0]
+tb_gpu.dut.g_sm[1].u_sm.cpc[9:0]
+@22
+tb_gpu.dut.g_sm[1].u_sm.ir[31:0]
+@24
+tb_gpu.dut.g_sm[1].u_sm.d_op[5:0]
+@28
+tb_gpu.dut.g_sm[1].u_sm.cact[7:0]
+tb_gpu.dut.g_sm[1].u_sm.cexe[7:0]
+tb_gpu.dut.g_sm[1].u_sm.w_wait[3:0]
+tb_gpu.dut.g_sm[1].u_sm.w_done[3:0]
+-SM 1: load/store unit
+@28
+tb_gpu.dut.g_sm[1].u_sm.lpend[7:0]
+tb_gpu.dut.g_sm[1].u_sm.lserve[7:0]
+tb_gpu.dut.g_sm[1].u_sm.s_sel[7:0]
+@24
+tb_gpu.dut.g_sm[1].u_sm.txn_cnt[15:0]
+@28
+tb_gpu.dut.g_sm[1].u_sm.mreq_valid
+tb_gpu.dut.g_sm[1].u_sm.mresp_valid
+@22
+tb_gpu.dut.g_sm[1].u_sm.mreq_addr[31:0]
+-Arbiter and DRAM
+@28
+tb_gpu.mem_req_valid
+tb_gpu.mem_resp_valid
+@22
+tb_gpu.mem_req_addr[31:0]
+@24
+tb_gpu.mem_req_op[1:0]
