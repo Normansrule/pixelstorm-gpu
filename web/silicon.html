@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" class="ui">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pixelstorm silicon — the GPU as 1.38 million real transistors</title>
+<meta name="description" content="Pixelstorm synthesized to SkyWater 130 nm standard cells, placed into a real GDS layout and rendered with KLayout: dive from the die to a single transistor and spin real standard cells in 3D.">
+<meta name="theme-color" content="#05070B">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ui.css">
+<link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/silicon.css">
+</head>
+<body>
+<nav class="unav" aria-label="Site">
+  <a class="ulogo" href="index.html" aria-label="Pixelstorm home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="6" fill="none" stroke="url(#lg)" stroke-width="2"/><g fill="url(#lg)"><rect x="7" y="8" width="3.2" height="16" rx="1"/><rect x="12.3" y="8" width="3.2" height="16" rx="1"/><rect x="17.6" y="8" width="3.2" height="16" rx="1"/><rect x="22.9" y="8" width="3.2" height="16" rx="1"/></g><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38D6FF"/><stop offset=".55" stop-color="#5B84FF"/><stop offset="1" stop-color="#FF4D8D"/></linearGradient></defs></svg>
+    Pixelstorm
+  </a>
+  <div class="ulinks">
+    <a href="index.html">Home</a>
+    <a href="chip.html">3D Chip</a>
+    <a href="silicon.html" aria-current="page">Silicon</a>
+    <a href="visualizer.html">Visualizer</a>
+    <a href="labs.html">Labs</a>
+    <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
+    <a class="gh" href="https://github.com/Normansrule/pixelstorm-gpu">GitHub</a>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO -->
+<header class="sil-hero wrap">
+  <div class="grid-bg"></div>
+  <div class="sil-hero-text">
+    <span class="upill beam" data-reveal><span class="dot"></span>SkyWater 130 nm, rendered by KLayout</span>
+    <h1 data-reveal="80"><span class="shimmer">The same Verilog,</span><br><span class="grad">as real silicon.</span></h1>
+    <p class="lede" data-reveal="160">Pixelstorm synthesized with Yosys into real SkyWater 130 nm standard cells, placed row by row into a GDS (Graphic Design System) layout, and drawn by KLayout, the tool chip designers use. Hover the die to see where each block landed.</p>
+    <div class="sil-stats" data-reveal="220">
+      <div><b data-ticker="0" id="stCells">0</b><span>standard cells</span></div>
+      <div><b data-ticker="0" id="stTr">0</b><span>transistors</span></div>
+      <div><b id="stArea">0</b><span>mm² die</span></div>
+      <div><b id="stUtil">0</b><span>core utilization</span></div>
+    </div>
+    <div class="cta" data-reveal="280">
+      <a class="ubtn primary" href="https://github.com/Normansrule/pixelstorm-gpu/releases/latest">Download the GDS <span class="arr">→</span></a>
+      <a class="ubtn" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/14-silicon.md">Read chapter 14</a>
+    </div>
+  </div>
+  <figure class="die-wrap spotlight" data-reveal="120">
+    <div class="die" id="die">
+      <img src="img/silicon-die.jpg" alt="The Pixelstorm die, rendered by KLayout" id="dieImg">
+      <svg id="dieOverlay" aria-hidden="true"></svg>
+    </div>
+    <figcaption><span id="dieTip">Hover a block. Every one of the 145,800 cells is a real sky130 layout.</span>
+      <label class="tog"><input type="checkbox" id="ovToggle" checked> Floorplan</label></figcaption>
+  </figure>
+</header>
+
+<!-- ============================================================ POWERS OF TEN -->
+<section class="dive" id="dive">
+  <div class="dive-stage">
+    <div class="dive-frame" id="diveFrame"></div>
+    <div class="dive-hud">
+      <span class="eyebrow">Powers of ten</span>
+      <h2 id="diveTitle">The whole die</h2>
+      <p id="diveText"></p>
+      <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+      <div class="dive-dots" id="diveDots"></div>
+    </div>
+  </div>
+  <div class="dive-track" id="diveTrack"></div>
+</section>
+
+<!-- ============================================================ 3D CELL -->
+<section class="cell3d wrap" id="cells">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">Inside a standard cell</span>
+    <h2>Spin a real <span class="grad">sky130 gate</span></h2>
+    <p>The polygons below come straight from the SkyWater library that Pixelstorm is built from. Each layer is extruded to its place in the process stack. Pull the layers apart to see the transistors: every place red polysilicon crosses green diffusion.</p>
+  </div>
+  <div class="cell-ui">
+    <div class="cell-view spotlight"><canvas id="cellGl" aria-label="3D view of a standard cell. Drag to rotate."></canvas><div class="cell-badge" id="cellBadge"></div></div>
+    <div class="cell-side">
+      <div class="seg cells-seg" id="cellPick" role="radiogroup" aria-label="Cell"></div>
+      <label class="fld">Explode layers <input type="range" id="explode" min="0" max="100" value="45"></label>
+      <label class="fld">Height exaggeration <input type="range" id="zscale" min="1" max="12" value="5"></label>
+      <div class="layer-list" id="layerList"></div>
+      <p class="small">Heights are schematic, not to scale: in real sky130 the metal stack is a few micrometres tall on a 0.46 µm site grid.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ EXPLORER -->
+<section class="bigview wrap" id="explore">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">Full resolution</span>
+    <h2>Explore the die yourself</h2>
+    <p>Scroll to zoom, drag to pan. This is a 3,200-pixel KLayout render; for the real thing at any zoom, download the GDS and open it in KLayout.</p>
+  </div>
+  <div class="pz spotlight" id="pz" data-reveal><img id="pzImg" alt="Full-resolution render of the Pixelstorm die" src="data/silicon-die-large.jpg" draggable="false"><div class="pz-hint">scroll to zoom, drag to pan, double-click to reset</div></div>
+</section>
+
+<!-- ============================================================ GALLERY / NUMBERS -->
+<section class="silgal wrap">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">The library</span>
+    <h2>Five cells that make a GPU</h2>
+  </div>
+  <div class="cellgrid" id="cellGrid"></div>
+  <div class="two" data-reveal>
+    <figure class="spotlight"><img src="img/fig-silicon-flow.svg" alt="RTL-to-GDS flow"><figcaption>The flow: solid steps run with <code>make silicon</code>; dashed steps are the next exercise with OpenROAD.</figcaption></figure>
+    <figure class="spotlight"><img src="img/fig-silicon-area.svg" alt="Area by block"><figcaption>Where the area goes: ALU lanes and storage, exactly as on real GPUs.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============================================================ REAL WORLD -->
+<section class="real wrap">
+  <div class="section-head" data-reveal>
+    <span class="eyebrow">The real thing</span>
+    <h2>Compare with real chips</h2>
+    <p>A GPU die photo shows the same structure at a vastly larger scale: repeated SM tiles, SRAM arrays, and a power grid. These are the best places to look, and the tools to go further.</p>
+  </div>
+  <div class="refgrid">
+    <a class="ref spotlight" data-reveal href="https://www.techpowerup.com/gpu-specs/"><span class="tag t-cyan">Die shots</span><h3>TechPowerUp GPU Database</h3><p>Specifications and die photos for most GPUs ever made, from GeForce and Radeon to data-center parts.</p></a>
+    <a class="ref spotlight" data-reveal="60" href="https://www.flickr.com/search/?text=Fritzchens%20Fritz%20die%20shot"><span class="tag t-cyan">Die shots</span><h3>Fritzchens Fritz on Flickr</h3><p>High-resolution infrared die photography of GPUs and CPUs, many released into the public domain.</p></a>
+    <a class="ref spotlight" data-reveal="120" href="https://tinytapeout.com"><span class="tag t-green">Open silicon</span><h3>Tiny Tapeout</h3><p>Real chips on sky130 made by thousands of people, with a 3D GDS viewer for every design.</p></a>
+    <a class="ref spotlight" data-reveal="60" href="https://www.klayout.de"><span class="tag t-violet">Tool</span><h3>KLayout</h3><p>The layout viewer and editor that drew every picture on this page. Free, open source, runs everywhere.</p></a>
+    <a class="ref spotlight" data-reveal="120" href="https://openlane2.readthedocs.io"><span class="tag t-violet">Tool</span><h3>OpenLane 2 and OpenROAD</h3><p>The open RTL-to-GDS flow: clock tree, routing and sign-off, the steps after Pixelstorm's placer.</p></a>
+    <a class="ref spotlight" data-reveal="180" href="https://skywater-pdk.readthedocs.io"><span class="tag t-amber">Process</span><h3>SkyWater 130 nm PDK</h3><p>The open process design kit: layers, design rules and the standard-cell library used here.</p></a>
+  </div>
+</section>
+
+<section class="run wrap">
+  <div class="run-grid">
+    <div data-reveal>
+      <span class="eyebrow">Build it yourself</span>
+      <h2>Your own GDS in about two minutes</h2>
+      <p>Yosys synthesizes, the Python placer places, KLayout draws. The same run happens in GitHub Actions for every release.</p>
+      <a class="ubtn primary" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/14-silicon.md">Chapter 14: From Verilog to silicon <span class="arr">→</span></a>
+    </div>
+    <div class="uterm" data-copy data-reveal="120">
+      <div class="uterm-bar"><i></i><i></i><i></i><span>bash</span></div>
+<pre><span class="k">sudo apt</span> install -y yosys klayout   <span class="c"># synthesis + the layout viewer</span>
+<span class="k">pip</span> install klayout numpy pillow    <span class="c"># KLayout's Python module for the renders</span>
+<span class="k">make</span> silicon                        <span class="c"># PDK, synthesis, placement, GDS, pictures</span>
+<span class="k">klayout</span> build/silicon/ps_s130.gds   <span class="c"># Display, Full Hierarchy to see inside cells</span></pre>
+    </div>
+  </div>
+</section>
+
+<footer class="ufoot wrap">
+  <span>Layouts use the SkyWater SKY130 open PDK (Apache 2.0). Renders by KLayout. Placement by tools/silicon/place.py.</span>
+  <span>Placed, not routed: clock tree, routing and sign-off are the next step (chapter 14).</span>
+</footer>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/ScrollTrigger.min.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/silicon.js"></script>
+</body>
+</html>

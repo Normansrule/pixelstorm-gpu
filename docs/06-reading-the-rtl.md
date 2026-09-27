@@ -1,6 +1,6 @@
 # 6. Reading the RTL
 
-> **Part 2: The hardware**, chapter 6 of 16. About 30 minutes.
+> **Part 2: The hardware**, chapter 6 of 17. About 30 minutes.
 
 **In this chapter you will learn**
 

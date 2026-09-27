@@ -1,0 +1,79 @@
+/* Silicon page. Builds on ui.css and home.css. */
+.sil-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 40px; align-items: center; min-height: 100vh; padding-top: 110px; padding-bottom: 60px; }
+.sil-hero h1 { font: 700 clamp(44px, 6vw, 84px)/.96 var(--f-cond); margin: 20px 0 18px; letter-spacing: -.01em; }
+.sil-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 26px; }
+.sil-stats div { border: 1px solid var(--edge); border-radius: 14px; padding: 12px; background: var(--card); }
+.sil-stats b { display: block; font: 700 26px var(--f-cond); }
+.sil-stats span { color: var(--tx2); font-size: 13px; }
+.die-wrap { margin: 0; padding: 12px; }
+.die { position: relative; border-radius: 12px; overflow: hidden; line-height: 0; }
+.die img { width: 100%; display: block; }
+.die svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.die svg rect { vector-effect: non-scaling-stroke; fill: rgba(255,255,255,0); stroke: rgba(255,255,255,.55); stroke-width: 1.5; transition: fill .2s, stroke .2s; cursor: help; }
+.die svg rect:hover, .die svg rect.hi { fill: rgba(56,214,255,.25); stroke: #38D6FF; stroke-width: 2.5; }
+.die svg text { fill: #fff; font: 600 13px var(--f-cond); pointer-events: none; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 3px; }
+.die.noov svg { display: none; }
+.die-wrap figcaption { display: flex; justify-content: space-between; gap: 12px; padding: 10px 4px 0; color: var(--tx2); font-size: 14px; }
+.tog { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+
+/* powers of ten */
+.dive { position: relative; }
+.dive-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; background: #05070B; }
+.dive-frame { position: absolute; inset: 0; }
+.dive-frame img { position: absolute; left: 50%; top: 50%; width: min(100vw, 160vh); height: auto; transform-origin: 50% 50%; will-change: transform, opacity; image-rendering: auto; }
+.dive-hud { position: absolute; left: 24px; bottom: 28px; max-width: 460px; padding: 18px 20px; border-radius: 18px; background: rgba(5,7,11,.72); border: 1px solid var(--edge); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.dive-hud h2 { font: 700 32px/1.05 var(--f-cond); margin: 6px 0 8px; }
+.dive-hud p { color: var(--tx2); margin: 0 0 12px; font-size: 15.5px; min-height: 3em; }
+.scalebar { display: flex; align-items: center; gap: 10px; font: 600 13px var(--f-mono); color: var(--tx); }
+.scalebar i { display: block; height: 4px; width: 120px; background: #fff; border-radius: 2px; box-shadow: 0 0 10px rgba(255,255,255,.4); }
+.dive-dots { display: flex; gap: 6px; margin-top: 12px; }
+.dive-dots b { width: 26px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.15); }
+.dive-dots b.on { background: var(--cyan); }
+.dive-track { height: 520vh; }
+
+/* 3D cell */
+.cell-ui { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .8fr); gap: 16px; }
+.cell-view { position: relative; height: 520px; }
+#cellGl { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.cell-badge { position: absolute; left: 16px; top: 14px; font: 600 14px var(--f-cond); color: var(--tx2); pointer-events: none; }
+.cell-badge b { display: block; font: 700 24px var(--f-cond); color: var(--tx); }
+.cell-side { display: flex; flex-direction: column; gap: 14px; }
+.cells-seg { flex-wrap: wrap; }
+.cells-seg button { padding: 9px 12px; }
+.cell-side .fld input { width: 100%; accent-color: var(--cyan); }
+.layer-list { display: grid; gap: 6px; }
+.layer-list label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tx2); cursor: pointer; }
+.layer-list i { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.small { font-size: 13px; color: var(--tx3); margin: 0; }
+
+/* pan-zoom explorer */
+.pz { position: relative; height: 72vh; overflow: hidden; border-radius: 20px; cursor: grab; touch-action: none; background: #05070B; }
+.pz.drag { cursor: grabbing; }
+.pz img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; }
+.pz-hint { position: absolute; right: 14px; bottom: 12px; font-size: 13px; color: var(--tx2); background: rgba(5,7,11,.7); padding: 5px 10px; border-radius: 999px; }
+
+/* gallery + references */
+.cellgrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.cellgrid figure { margin: 0; padding: 12px; }
+.cellgrid img { width: 100%; height: 190px; object-fit: contain; background: #05070B; border-radius: 10px; }
+.cellgrid figcaption b { display: block; font: 700 19px var(--f-cond); margin-top: 8px; }
+.cellgrid figcaption span { color: var(--tx2); font-size: 13.5px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two figure { margin: 0; padding: 12px; }
+.two img { width: 100%; border-radius: 10px; background: #fff; }
+.two figcaption { color: var(--tx2); font-size: 14px; padding-top: 8px; }
+.two code { font: 13px var(--f-mono); }
+.refgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ref { padding: 20px; text-decoration: none; color: var(--tx); display: flex; flex-direction: column; gap: 6px; }
+.ref h3 { margin: 6px 0 0; font: 700 22px var(--f-cond); }
+.ref p { margin: 0; color: var(--tx2); font-size: 14.5px; }
+.ref .tag { align-self: flex-start; }
+.cell3d, .bigview, .silgal, .real { padding-top: 110px; }
+
+@media (max-width: 980px) {
+  .sil-hero, .cell-ui, .two { grid-template-columns: minmax(0, 1fr); }
+  .cellgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .refgrid { grid-template-columns: minmax(0, 1fr); }
+  .sil-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dive-hud { left: 12px; right: 12px; max-width: none; }
+}

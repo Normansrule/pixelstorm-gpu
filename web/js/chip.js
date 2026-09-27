@@ -384,7 +384,7 @@
     const i = infoFor(id);
     $('iKind').textContent = i.kind; $('iTitle').textContent = i.title + (i.sm !== null ? ` ${i.sm}` : '');
     $('iBody').textContent = i.body;
-    $('iLinks').innerHTML = `<a href="${REPO}${i.rtl}" target="_blank" rel="noopener">${i.rtl}</a><a href="${REPO}${i.doc}" target="_blank" rel="noopener">Read the chapter</a><a href="visualizer.html?k=${R ? R.meta.kernel : 'mandelbrot'}">Open in 2D visualizer</a>`;
+    $('iLinks').innerHTML = `<a href="${REPO}${i.rtl}" target="_blank" rel="noopener">${i.rtl}</a><a href="${REPO}${i.doc}" target="_blank" rel="noopener">Read the chapter</a><a href="visualizer.html?k=${R ? R.meta.kernel : 'mandelbrot'}">Open in 2D visualizer</a><a href="silicon.html">See it as real silicon</a>`;
     liveInfo();
   }
   function liveInfo() {

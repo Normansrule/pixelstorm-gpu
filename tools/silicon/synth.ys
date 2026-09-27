@@ -1,0 +1,15 @@
+# Yosys synthesis of the Pixelstorm "ps_s130" tapeout configuration to
+# SkyWater 130 nm high-density standard cells (sky130_fd_sc_hd).
+# The same Verilog as the simulated GPU, smaller parameters. Hierarchy is kept
+# so every gate can be attributed to its block. Run: make silicon
+read_verilog -DSYNTHESIS -Irtl rtl/ps_alu.v rtl/ps_decoder.v rtl/ps_dispatcher.v rtl/ps_gpu_top.v rtl/ps_mem_arbiter.v rtl/ps_sm.v tools/silicon/ps_s130_top.v
+hierarchy -check -top ps_s130_top
+synth -top ps_s130_top
+dfflibmap -liberty build/pdk/sky130_fd_sc_hd__tt_025C_1v80.lib
+abc -liberty build/pdk/sky130_fd_sc_hd__tt_025C_1v80.lib
+opt_clean -purge
+setundef -zero
+hilomap -singleton -hicell sky130_fd_sc_hd__conb_1 HI -locell sky130_fd_sc_hd__conb_1 LO
+tee -o build/silicon/stat.txt stat -liberty build/pdk/sky130_fd_sc_hd__tt_025C_1v80.lib
+write_json build/silicon/ps_s130.json
+write_verilog -noattr build/silicon/ps_s130_netlist.v

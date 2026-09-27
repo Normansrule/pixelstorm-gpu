@@ -1,6 +1,6 @@
 # 4. Microarchitecture: the block diagram
 
-> **Part 2: The hardware**, chapter 4 of 16. About 20 minutes.
+> **Part 2: The hardware**, chapter 4 of 17. About 20 minutes.
 
 **In this chapter you will learn**
 

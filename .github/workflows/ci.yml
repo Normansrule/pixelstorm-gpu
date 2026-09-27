@@ -12,4 +12,4 @@ jobs:
       - run: make lint
       - run: node tools/figures.js
       - name: docs are in sync with the source
-        run: python3 tools/rtl_chapter.py && python3 tools/course.py && git diff --exit-code docs/
+        run: python3 tools/rtl_chapter.py && python3 tools/silicon/chapter.py && python3 tools/course.py && git diff --exit-code docs/

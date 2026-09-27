@@ -1,6 +1,6 @@
 # 10. Applications: the 15 kernels
 
-> **Part 4: Applications and graphics**, chapter 10 of 16. About 20 minutes.
+> **Part 4: Applications and graphics**, chapter 10 of 17. About 20 minutes.
 
 **In this chapter you will learn**
 

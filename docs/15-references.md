@@ -1,6 +1,6 @@
-# 14. References
+# 15. References
 
-> **Appendix**, chapter 14 of 16. About 5 minutes.
+> **Appendix**, chapter 15 of 17. About 5 minutes.
 
 ---
 
@@ -41,6 +41,20 @@ Everything here is in English. Official documentation first, then open-source GP
 - NVIDIA, "Volta" (V100) architecture whitepaper, 2017: Independent Thread Scheduling.
 - V. Narasiman et al., "Improving GPU Performance via Large Warps and Two-Level Warp Scheduling", MICRO 2011.
 
+## Silicon and layout
+
+| Resource | Why | Link |
+|---|---|---|
+| SkyWater SKY130 PDK documentation | the open 130 nm process Pixelstorm is placed in: layers, rules, cell libraries | <https://skywater-pdk.readthedocs.io> |
+| KLayout | layout viewer and editor; its Python module renders every silicon picture in this repository | <https://www.klayout.de> |
+| OpenROAD and OpenROAD-flow-scripts | open placement, clock-tree synthesis and routing; source of the sky130hd platform files `make silicon` downloads | <https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts> |
+| OpenLane 2 | the complete open RTL-to-GDS flow | <https://openlane2.readthedocs.io> |
+| Yosys | open synthesis, used for the sky130 netlist | <https://yosyshq.net/yosys/> |
+| Tiny Tapeout | fabricate a small design on sky130; its GDS viewer shows real taped-out layouts | <https://tinytapeout.com> |
+| Zero to ASIC course (Matt Venn) | an English video course through exactly this flow | <https://www.zerotoasiccourse.com> |
+| TechPowerUp GPU Database | die photos and specifications of real GPUs | <https://www.techpowerup.com/gpu-specs/> |
+| Neil H. E. Weste, David Money Harris, *CMOS VLSI Design*, 4th ed. | the standard textbook for standard cells, layout and physical design | |
+
 ## Videos (English; search the titles on YouTube)
 
 - Branch Education, "How do Graphics Cards Work? Exploring GPU Architecture".
@@ -52,4 +66,4 @@ Everything here is in English. Official documentation first, then open-source GP
 
 ---
 
-[Previous: 13. From Pixelstorm to a real GPU](13-real-world-gpus.md) | [Course map](00-start-here.md) | [Next: 15. Glossary](15-glossary.md)
+[Previous: 14. From Verilog to silicon](14-silicon.md) | [Course map](00-start-here.md) | [Next: 16. Glossary](16-glossary.md)

@@ -1,0 +1,472 @@
+{
+ "config": "ps_s130: 2 SMs, 2 warps x 4 lanes, 8 registers, 32-word shared memory, 64-instruction memory",
+ "process": "SkyWater 130 nm, sky130_fd_sc_hd (high density) standard cells, typical corner 25 C 1.80 V",
+ "cells": 129171,
+ "flops": 10592,
+ "fillers": 137468,
+ "cell_area_um2": 1197396,
+ "core_um": [
+  1552.04,
+  1338.24
+ ],
+ "die_um": [
+  1672.04,
+  1458.24
+ ],
+ "die_mm2": 2.438,
+ "utilization": 0.577,
+ "blocks": [
+  {
+   "id": "arb",
+   "name": "memory arbiter",
+   "cells": 352,
+   "area_um2": 7013,
+   "rect_um": [
+    60.0,
+    60.0,
+    1011.08,
+    13.6
+   ]
+  },
+  {
+   "id": "cmem",
+   "name": "constants",
+   "cells": 878,
+   "area_um2": 22752,
+   "rect_um": [
+    1306.14,
+    1267.68,
+    305.9,
+    130.56
+   ]
+  },
+  {
+   "id": "disp",
+   "name": "dispatcher",
+   "cells": 189,
+   "area_um2": 2509,
+   "rect_um": [
+    1249.56,
+    60.0,
+    362.48,
+    13.6
+   ]
+  },
+  {
+   "id": "imem",
+   "name": "instruction memory",
+   "cells": 4356,
+   "area_um2": 92698,
+   "rect_um": [
+    60.0,
+    1267.68,
+    1246.14,
+    130.56
+   ]
+  },
+  {
+   "id": "sm0.ctrl",
+   "name": "SM 0 scheduler + LSU + control",
+   "cells": 10628,
+   "area_um2": 84670,
+   "rect_um": [
+    433.52,
+    73.6,
+    402.5,
+    364.48
+   ]
+  },
+  {
+   "id": "sm0.lane0",
+   "name": "SM 0 lane 0",
+   "cells": 9386,
+   "area_um2": 63551,
+   "rect_um": [
+    60.0,
+    438.08,
+    193.66,
+    560.32
+   ]
+  },
+  {
+   "id": "sm0.lane1",
+   "name": "SM 0 lane 1",
+   "cells": 9275,
+   "area_um2": 62815,
+   "rect_um": [
+    253.66,
+    438.08,
+    193.66,
+    560.32
+   ]
+  },
+  {
+   "id": "sm0.lane2",
+   "name": "SM 0 lane 2",
+   "cells": 9252,
+   "area_um2": 62616,
+   "rect_um": [
+    447.32,
+    438.08,
+    193.66,
+    560.32
+   ]
+  },
+  {
+   "id": "sm0.lane3",
+   "name": "SM 0 lane 3",
+   "cells": 9223,
+   "area_um2": 62496,
+   "rect_um": [
+    640.98,
+    438.08,
+    195.04,
+    560.32
+   ]
+  },
+  {
+   "id": "sm0.rf",
+   "name": "SM 0 register file",
+   "cells": 7167,
+   "area_um2": 121050,
+   "rect_um": [
+    60.0,
+    998.4,
+    776.02,
+    269.28
+   ]
+  },
+  {
+   "id": "sm0.smem",
+   "name": "SM 0 shared memory",
+   "cells": 6766,
+   "area_um2": 78618,
+   "rect_um": [
+    60.0,
+    73.6,
+    373.52,
+    364.48
+   ]
+  },
+  {
+   "id": "sm1.ctrl",
+   "name": "SM 1 scheduler + LSU + control",
+   "cells": 10446,
+   "area_um2": 82304,
+   "rect_um": [
+    1215.52,
+    73.6,
+    396.52,
+    359.04
+   ]
+  },
+  {
+   "id": "sm1.lane0",
+   "name": "SM 1 lane 0",
+   "cells": 9452,
+   "area_um2": 63924,
+   "rect_um": [
+    836.02,
+    432.64,
+    193.66,
+    563.04
+   ]
+  },
+  {
+   "id": "sm1.lane1",
+   "name": "SM 1 lane 1",
+   "cells": 9222,
+   "area_um2": 62557,
+   "rect_um": [
+    1029.68,
+    432.64,
+    193.66,
+    563.04
+   ]
+  },
+  {
+   "id": "sm1.lane2",
+   "name": "SM 1 lane 2",
+   "cells": 9330,
+   "area_um2": 63223,
+   "rect_um": [
+    1223.34,
+    432.64,
+    193.66,
+    563.04
+   ]
+  },
+  {
+   "id": "sm1.lane3",
+   "name": "SM 1 lane 3",
+   "cells": 9262,
+   "area_um2": 62879,
+   "rect_um": [
+    1417.0,
+    432.64,
+    195.04,
+    563.04
+   ]
+  },
+  {
+   "id": "sm1.rf",
+   "name": "SM 1 register file",
+   "cells": 7211,
+   "area_um2": 121533,
+   "rect_um": [
+    836.02,
+    995.68,
+    776.02,
+    272.0
+   ]
+  },
+  {
+   "id": "sm1.smem",
+   "name": "SM 1 shared memory",
+   "cells": 6632,
+   "area_um2": 78949,
+   "rect_um": [
+    836.02,
+    73.6,
+    379.5,
+    359.04
+   ]
+  },
+  {
+   "id": "top",
+   "name": "top-level",
+   "cells": 144,
+   "area_um2": 1239,
+   "rect_um": [
+    1071.08,
+    60.0,
+    178.48,
+    13.6
+   ]
+  }
+ ],
+ "top_cell_types": [
+  [
+   "nand2_1",
+   20117
+  ],
+  [
+   "xnor2_1",
+   11616
+  ],
+  [
+   "nor2_1",
+   11067
+  ],
+  [
+   "a21oi_1",
+   10714
+  ],
+  [
+   "edfxtp_1",
+   10202
+  ],
+  [
+   "o21ai_0",
+   10127
+  ],
+  [
+   "xor2_1",
+   7929
+  ],
+  [
+   "mux4_2",
+   6605
+  ],
+  [
+   "maj3_1",
+   5082
+  ],
+  [
+   "mux2_1",
+   3974
+  ],
+  [
+   "mux2i_1",
+   3542
+  ],
+  [
+   "lpflow_isobufsrc_1",
+   2985
+  ],
+  [
+   "a22oi_1",
+   1969
+  ],
+  [
+   "clkinv_1",
+   1832
+  ],
+  [
+   "nand3_1",
+   1776
+  ],
+  [
+   "nand2b_1",
+   1501
+  ]
+ ],
+ "filler_types": [
+  [
+   "tapvpwrvgnd_1",
+   47102
+  ],
+  [
+   "decap_12",
+   37648
+  ],
+  [
+   "fill_1",
+   14063
+  ],
+  [
+   "decap_8",
+   10692
+  ],
+  [
+   "decap_4",
+   7735
+  ],
+  [
+   "fill_2",
+   7248
+  ],
+  [
+   "decap_6",
+   6719
+  ],
+  [
+   "decap_3",
+   6261
+  ]
+ ],
+ "io_pins": 441,
+ "gds_mb": 14.7,
+ "transistors_logic": 1367810,
+ "transistors_total": 1505920,
+ "zooms": [
+  {
+   "file": "img/silicon-zoom-0.jpg",
+   "width_um": 1688.04
+  },
+  {
+   "file": "img/silicon-zoom-1.jpg",
+   "width_um": 600
+  },
+  {
+   "file": "img/silicon-zoom-2.jpg",
+   "width_um": 200
+  },
+  {
+   "file": "img/silicon-zoom-3.jpg",
+   "width_um": 70
+  },
+  {
+   "file": "img/silicon-zoom-4.jpg",
+   "width_um": 24
+  },
+  {
+   "file": "img/silicon-zoom-5.jpg",
+   "width_um": 9
+  }
+ ],
+ "zoom_center_um": [
+  362.36,
+  787.88
+ ],
+ "frame_um": [
+  1688.04,
+  1474.24
+ ],
+ "layers": [
+  {
+   "key": "nwell",
+   "gds": "64/20",
+   "color": "#3B4A2F",
+   "name": "n-well"
+  },
+  {
+   "key": "diff",
+   "gds": "65/20",
+   "color": "#2EC27E",
+   "name": "diffusion (transistor source/drain)"
+  },
+  {
+   "key": "tap",
+   "gds": "65/44",
+   "color": "#1B7F5A",
+   "name": "substrate / well taps"
+  },
+  {
+   "key": "poly",
+   "gds": "66/20",
+   "color": "#FF3B3B",
+   "name": "polysilicon (transistor gates)"
+  },
+  {
+   "key": "licon",
+   "gds": "66/44",
+   "color": "#1A1A1A",
+   "name": "local interconnect contact"
+  },
+  {
+   "key": "li1",
+   "gds": "67/20",
+   "color": "#A77BFF",
+   "name": "local interconnect (li1)"
+  },
+  {
+   "key": "mcon",
+   "gds": "67/44",
+   "color": "#E8E8E8",
+   "name": "li1 to metal-1 contact"
+  },
+  {
+   "key": "met1",
+   "gds": "68/20",
+   "color": "#3D8BFF",
+   "name": "metal 1"
+  },
+  {
+   "key": "via",
+   "gds": "68/44",
+   "color": "#FFFFFF",
+   "name": "via 1"
+  },
+  {
+   "key": "met2",
+   "gds": "69/20",
+   "color": "#FF5EC4",
+   "name": "metal 2"
+  },
+  {
+   "key": "met3",
+   "gds": "70/20",
+   "color": "#2AD4D4",
+   "name": "metal 3 (pins)"
+  },
+  {
+   "key": "met4",
+   "gds": "71/20",
+   "color": "#FFB938",
+   "name": "metal 4 (power stripes)"
+  },
+  {
+   "key": "met5",
+   "gds": "72/20",
+   "color": "#FF7A3D",
+   "name": "metal 5 (power stripes)"
+  },
+  {
+   "key": "bound",
+   "gds": "235/4",
+   "color": "#9DADC1",
+   "name": "die boundary"
+  }
+ ]
+}

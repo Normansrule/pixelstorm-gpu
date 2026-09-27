@@ -1,0 +1,14 @@
+{
+  "DESIGN_NAME": "ps_s130_top",
+  "VERILOG_FILES": [
+    "dir::../../../rtl/ps_alu.v", "dir::../../../rtl/ps_decoder.v", "dir::../../../rtl/ps_dispatcher.v",
+    "dir::../../../rtl/ps_gpu_top.v", "dir::../../../rtl/ps_mem_arbiter.v", "dir::../../../rtl/ps_sm.v",
+    "dir::../ps_s130_top.v"
+  ],
+  "VERILOG_INCLUDE_DIRS": ["dir::../../../rtl"],
+  "VERILOG_DEFINES": ["SYNTHESIS"],
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 40,
+  "FP_CORE_UTIL": 45,
+  "PL_TARGET_DENSITY_PCT": 55
+}

@@ -119,3 +119,15 @@ svg.mini { image-rendering: auto; }
   .bento { grid-template-columns: minmax(0, 1fr); } .c-chip { grid-column: auto; grid-row: auto; }
   .hero-shade { background: linear-gradient(0deg, rgba(5,7,11,.96) 20%, rgba(5,7,11,.55) 70%, rgba(5,7,11,.3)); }
 }
+
+/* ---------- silicon teaser ---------- */
+.siltease { padding-top: 120px; }
+.silcard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; text-decoration: none; color: var(--tx); overflow: hidden; }
+.sil-img { background: #05070B; line-height: 0; }
+.sil-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.silcard:hover .sil-img img { transform: scale(1.03); }
+.sil-txt { padding: 34px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.sil-txt h2 { font: 700 clamp(30px, 3.6vw, 46px)/1.05 var(--f-cond); margin: 0; }
+.sil-txt p { color: var(--tx2); margin: 0; font-size: 16.5px; }
+.sil-txt .go { color: var(--cyan); font-weight: 600; }
+@media (max-width: 860px) { .silcard { grid-template-columns: minmax(0, 1fr); } }

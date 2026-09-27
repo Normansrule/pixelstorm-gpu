@@ -2,11 +2,12 @@
 
 <h1 align="center">Pixelstorm</h1>
 <p align="center"><b>An open-source GPU you can watch paint.</b><br>
-A complete GPU in Verilog that renders shaders, triangles and fractals, with a 3D chip explorer, a cycle-by-cycle visualizer, six interactive labs and a 16-chapter course.</p>
+A complete GPU in Verilog that renders shaders, triangles and fractals, placed as real SkyWater 130 nm silicon, with a 3D chip explorer, a cycle-by-cycle visualizer, six interactive labs and a 17-chapter course.</p>
 
 <p align="center">
 <a href="https://normansrule.github.io/pixelstorm-gpu/"><b>Website</b></a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/chip.html"><b>3D chip explorer</b></a> &nbsp;|&nbsp;
+<a href="https://normansrule.github.io/pixelstorm-gpu/silicon.html"><b>Silicon</b></a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/visualizer.html?tour">Guided tour</a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/labs.html">Labs</a> &nbsp;|&nbsp;
 <a href="docs/00-start-here.md">Course</a>
@@ -38,7 +39,34 @@ A GPU (Graphics Processing Unit) draws an image by running one small program on 
 | **A CUDA-style ISA** | 40 instructions, each mapped to the CUDA, PTX or SASS operation it imitates. `./pixelstorm explain SHFL` |
 | **15 example kernels** | vector add, SAXPY, divergence, reductions, histogram, matrix multiply, coalescing, bank conflicts, vote, scan, image threshold, and the three graphics kernels. |
 | **Proof it is right** | `./pixelstorm test`: every kernel on 1 and 2 SMs, RTL and model agree on every commit and every memory word, and the answer matches a CPU. |
-| **Course** | 16 chapters in five parts with 31 figures drawn from real traces and "check yourself" questions. |
+| **Silicon** | SkyWater 130 nm synthesis, a placed GDS layout, KLayout renders and 3D standard cells. |
+| **Course** | 17 chapters in five parts with figures drawn from real traces and "check yourself" questions. |
+
+## From Verilog to silicon
+
+The same Verilog, synthesized with Yosys into real **SkyWater 130 nm** standard cells, placed row by row into a GDS (Graphic Design System) layout and rendered by KLayout. One command, about two minutes:
+
+```bash
+make silicon      # PDK download, synthesis, placement, GDS, KLayout pictures
+make gds          # open build/silicon/ps_s130.gds in KLayout (Display, Full Hierarchy)
+```
+
+| | |
+|---|---|
+| Standard cells | **145,800** (10,592 flip-flops) plus 145,607 tap, decap and filler cells |
+| Transistors | **1,380,690**, counted from the layout |
+| Die | 1670.2 x 1455.52 µm = **2.431 mm²**, 57.7% utilization |
+| Status | placed, not yet routed: clock tree, routing and sign-off are the OpenLane exercise in [chapter 14](docs/14-silicon.md) |
+
+| The die (KLayout) | Floorplan | 9 µm: single transistors |
+|---|---|---|
+| ![die](docs/img/silicon-die.jpg) | ![floorplan](docs/img/silicon-blocks.jpg) | ![transistors](docs/img/silicon-zoom-5.jpg) |
+
+| NAND2 (4 transistors) | Full adder (28) | D flip-flop (24) |
+|---|---|---|
+| ![NAND2](docs/img/cell-nand2_1.png) | ![Full adder](docs/img/cell-fa_1.png) | ![Flip-flop](docs/img/cell-dfxtp_1.png) |
+
+Every release carries the GDS as a download (built by `.github/workflows/silicon.yml`), and the [silicon page](https://normansrule.github.io/pixelstorm-gpu/silicon.html) lets you dive from the die to a transistor and spin real sky130 gates in 3D.
 
 ## The course
 
@@ -48,8 +76,8 @@ A GPU (Graphics Processing Unit) draws an image by running one small program on 
 | **2. The hardware** | [4 Microarchitecture](docs/04-microarchitecture.md), [5 Life of one instruction](docs/05-instruction-lifecycle.md), [6 Reading the RTL](docs/06-reading-the-rtl.md) |
 | **3. Performance** | [7 Divergence](docs/07-divergence.md), [8 Memory: coalescing and banks](docs/08-memory.md), [9 Synchronization](docs/09-synchronization.md) |
 | **4. Applications and graphics** | [10 Applications](docs/10-applications.md), [11 Graphics: pixels, triangles and fractals](docs/11-graphics.md) |
-| **5. Build on it** | [12 Make it better](docs/12-make-it-better.md), [13 From Pixelstorm to a real GPU](docs/13-real-world-gpus.md) |
-| **Appendix** | [14 References](docs/14-references.md), [15 Glossary](docs/15-glossary.md), [16 Troubleshooting](docs/16-troubleshooting.md) |
+| **5. Build on it** | [12 Make it better](docs/12-make-it-better.md), [13 From Pixelstorm to a real GPU](docs/13-real-world-gpus.md), [14 From Verilog to silicon](docs/14-silicon.md) |
+| **Appendix** | [15 References](docs/15-references.md), [16 Glossary](docs/16-glossary.md), [17 Troubleshooting](docs/17-troubleshooting.md) |
 
 | | |
 |---|---|
@@ -90,10 +118,11 @@ rtl/          the GPU in Verilog: ps_sm.v (the SM), ps_alu.v, ps_decoder.v,
               ps_dispatcher.v, ps_mem_arbiter.v, ps_gpu_top.v, ps_defines.vh
 sim/          testbench with host driver and DRAM model; GTKWave view
 kernels/      15 example kernels (.psa = Pixelstorm assembly)
-web/          website: index (home), chip (3D explorer), visualizer, labs
+web/          website: index (home), chip (3D explorer), silicon, visualizer, labs
               js/pixelstorm.js = assembler + golden model, js/replay.js = trace replay,
               js/ui.js + css/ui.css = animated components, vendor/ = three.js and GSAP
 tools/        pixelstorm.js (the CLI), figures.js (docs/img), site_data.js (web/data),
+              silicon/ = synth.ys, place.py, render.py (RTL -> sky130 GDS -> KLayout pictures),
               course.py and rtl_chapter.py (docs), record_chip.py (the README animation)
 tests/        independent answer checks, including CPU renderers for the images
 docs/         the course; docs/img/ figures are generated from simulation traces

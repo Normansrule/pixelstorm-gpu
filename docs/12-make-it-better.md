@@ -1,6 +1,6 @@
 # 12. Make it better
 
-> **Part 5: Build on it**, chapter 12 of 16. About 30 minutes.
+> **Part 5: Build on it**, chapter 12 of 17. About 30 minutes.
 
 **In this chapter you will learn**
 
@@ -53,7 +53,7 @@ Add `ATOM.MAX`, `ATOM.CAS` (compare-and-swap) and a `MEMBAR` fence. With CAS you
 ## 7. Better divergence handling
 
 - Implement a reconvergence stack with explicit `SSY`/`SYNC` instructions and compare SIMD efficiency with min-PC on `03_divergence`.
-- Research direction: dynamic warp formation or thread block compaction (see [14-references.md](14-references.md)).
+- Research direction: dynamic warp formation or thread block compaction (see [15-references.md](15-references.md)).
 
 ## 8. Several blocks per SM
 

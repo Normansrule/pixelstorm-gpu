@@ -1,6 +1,6 @@
 # 11. Graphics: pixels, triangles and fractals
 
-> **Part 4: Applications and graphics**, chapter 11 of 16. About 30 minutes.
+> **Part 4: Applications and graphics**, chapter 11 of 17. About 30 minutes.
 
 **In this chapter you will learn**
 

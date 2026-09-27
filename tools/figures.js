@@ -657,4 +657,49 @@ function figMandelDivergence() {
   write('fig-mandel-divergence.svg', 960, yb + 74, b, 'Mandelbrot iteration counts and idle lanes per warp');
 }
 
-[figGallery, figRaster, figMandelDivergence, figThreads, figShuffle, figTop, figSm, figEncoding, figFsm, figLifecycle, figDivergence, figCoalescing, figBanks, figTimelines, figScale, figLatency, figHierarchy].forEach(f => f());
+// ---------------------------------------------------------------------------
+// silicon: RTL -> GDS flow, and where the area goes (from web/data/silicon.json)
+// ---------------------------------------------------------------------------
+function figSiliconFlow() {
+  const S = JSON.parse(fs.readFileSync(path.join(ROOT, 'web', 'data', 'silicon.json'), 'utf8'));
+  const steps = [
+    ['Verilog RTL', 'rtl/*.v', 'done', 'tb'], ['Synthesis', 'Yosys + sky130 Liberty', 'done', 'tg'],
+    ['Gate netlist', `${S.cells.toLocaleString('en-US')} cells`, 'done', 'tg'], ['Floorplan', `${S.die_um[0]} x ${S.die_um[1]} um`, 'done', 'ta'],
+    ['Placement', `${Math.round(S.utilization * 100)}% utilization`, 'done', 'ta'], ['Clock tree', 'OpenROAD', 'next', 'box'],
+    ['Routing', 'OpenROAD', 'next', 'box'], ['Sign-off', 'DRC, LVS, timing', 'next', 'box'], ['GDS', 'KLayout', 'done', 'tm'],
+    ['Fab', 'SkyWater 130 nm', 'real', 'tv'], ['Package', 'bond, test', 'real', 'tv'],
+  ];
+  let b = T(20, 32, 'From Verilog to silicon: the steps, and which ones Pixelstorm runs today', 'h', 22);
+  b += T(20, 52, 'Solid: done by make silicon. Dashed: the rest of a real flow (OpenROAD / OpenLane). Violet: what a foundry and packaging house do.', 'ink2', 13);
+  steps.forEach(([t, sub, st, cls], i) => {
+    const x = 20 + (i % 6) * 156, y = 80 + Math.floor(i / 6) * 118;
+    b += R(x, y, 140, 80, cls, 8, st === 'next' ? 'stroke-dasharray="6 4" stroke-width="1.6"' : 'stroke-width="1.6"');
+    b += T(x + 12, y + 28, t, 'h', 17) + T(x + 12, y + 50, sub, 'ink2', 12);
+    b += T(x + 12, y + 68, st === 'done' ? 'Pixelstorm: yes' : st === 'next' ? 'exercise' : 'industry', st === 'done' ? 'h fg' : 'h ink3', 12);
+    if (i % 6 !== 5 && i < steps.length - 1) b += L(x + 142, y + 40, x + 154, y + 40, 'lnd', 1.6);
+  });
+  b += P('M 800 160 C 820 185, 40 180, 20 198', 'lnd', 1.4, 'ah', 'stroke-dasharray="4 4"');
+  write('fig-silicon-flow.svg', 960, 330, b, 'The RTL-to-GDS flow and what Pixelstorm runs');
+}
+function figSiliconArea() {
+  const S = JSON.parse(fs.readFileSync(path.join(ROOT, 'web', 'data', 'silicon.json'), 'utf8'));
+  const kinds = {}; const lab = { rf: 'register files', lane: 'ALU lanes (8)', smem: 'shared memory', ctrl: 'schedulers, LSUs, control', imem: 'instruction memory', cmem: 'constant bank', arb: 'memory arbiter', disp: 'dispatcher', top: 'top level' };
+  for (const blk of S.blocks) { let k = blk.id.split('.').pop(); if (k.startsWith('lane')) k = 'lane'; kinds[k] = (kinds[k] || 0) + blk.area_um2; }
+  const rows = Object.entries(kinds).sort((a, c) => c[1] - a[1]); const tot = rows.reduce((a, r) => a + r[1], 0);
+  const cls = { rf: 'fv', lane: 'fg', smem: 'fa', ctrl: 'fb', imem: 'fb', cmem: 'fb', arb: 'fm', disp: 'fb', top: 'fs' };
+  let b = T(20, 32, `Where the ${(tot / 1e6).toFixed(2)} mm² of logic goes (SkyWater 130 nm, ps_s130 configuration)`, 'h', 22);
+  b += T(20, 52, 'Standard-cell area by block, from Yosys + the placer. Arithmetic lanes and storage dominate, as on every GPU.', 'ink2', 13);
+  rows.forEach(([k, a], i) => {
+    const y = 76 + i * 30; const w = a / rows[0][1] * 250;
+    b += T(20, y + 16, lab[k] || k, 'ink', 13.5) + R(230, y + 2, w, 20, cls[k] || 'fs', 3) + T(236 + w, y + 17, `${(a / 1e6).toFixed(3)} mm²  ${(100 * a / tot).toFixed(1)}%`, 'mono ink2', 11.5);
+  });
+  const x0 = 580; const tt = S.top_cell_types.slice(0, 12); const mx = tt[0][1];
+  b += T(x0 + 150, 72, "Most used cells", "h", 16);
+  tt.forEach(([n, c], i) => { const y = 104 + i * 22; b += T(x0 + 140, y + 13, n, 'mono', 11.5, 'end') + R(x0 + 150, y + 2, c / mx * 210, 14, 'fs', 2) + T(x0 + 156 + c / mx * 210, y + 13, c.toLocaleString('en-US'), 'mono ink3', 11); });
+  const h = Math.max(76 + rows.length * 30, 104 + tt.length * 22) + 30;
+  b += T(20, h - 6, `${S.cells.toLocaleString('en-US')} cells (${S.flops.toLocaleString('en-US')} flip-flops) plus ${S.fillers.toLocaleString('en-US')} tap/decap/filler cells on a ${S.die_um[0]} x ${S.die_um[1]} um die (${S.die_mm2} mm²).`, 'ink2', 12.5);
+  write('fig-silicon-area.svg', 960, h + 10, b, 'Silicon area by block and most used standard cells');
+}
+
+const SIL = fs.existsSync(path.join(ROOT, 'web', 'data', 'silicon.json')) ? [figSiliconFlow, figSiliconArea] : [];
+[...SIL, figGallery, figRaster, figMandelDivergence, figThreads, figShuffle, figTop, figSm, figEncoding, figFsm, figLifecycle, figDivergence, figCoalescing, figBanks, figTimelines, figScale, figLatency, figHierarchy].forEach(f => f());

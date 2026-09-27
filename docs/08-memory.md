@@ -1,6 +1,6 @@
 # 8. Memory: coalescing and banks
 
-> **Part 3: Performance**, chapter 8 of 16. About 25 minutes.
+> **Part 3: Performance**, chapter 8 of 17. About 25 minutes.
 
 **In this chapter you will learn**
 

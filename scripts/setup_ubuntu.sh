@@ -16,6 +16,10 @@ if [ "$NODE_MAJOR" -lt 18 ]; then
   exit 1
 fi
 echo
+echo "==> silicon tools (optional: make silicon)"
+sudo apt-get install -y klayout || echo "klayout desktop app not available from apt; see https://www.klayout.de/build.html"
+python3 -m pip install --user --break-system-packages klayout numpy pillow 2>/dev/null || python3 -m pip install klayout numpy pillow || echo "install the KLayout Python module with: pip install klayout numpy pillow"
+echo
 echo "==> smoke test"
 node tools/pixelstorm.js rtl kernels/01_vector_add.psa | tail -2
 echo

@@ -1,6 +1,6 @@
 # 3. The Pixelstorm instruction set
 
-> **Part 1: Concepts**, chapter 3 of 16. About 20 minutes.
+> **Part 1: Concepts**, chapter 3 of 17. About 20 minutes.
 
 **In this chapter you will learn**
 

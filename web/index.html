@@ -25,6 +25,7 @@
   <div class="ulinks">
     <a href="index.html" aria-current="page">Home</a>
     <a href="chip.html">3D Chip</a>
+    <a href="silicon.html">Silicon</a>
     <a href="visualizer.html">Visualizer</a>
     <a href="labs.html">Labs</a>
     <a href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Course</a>
@@ -64,7 +65,7 @@
   <div class="stat" data-reveal="60"><b data-ticker="40">0</b><span>instructions, each mapped to CUDA, PTX and SASS</span></div>
   <div class="stat" data-reveal="120"><b data-ticker="30">0</b><span>RTL test runs on every push, 1 and 2 SMs</span></div>
   <div class="stat" data-reveal="180"><b>0</b><span>cycles of disagreement between the Verilog and the golden model</span></div>
-  <div class="stat" data-reveal="240"><b data-ticker="16">0</b><span>chapters with figures drawn from real simulation traces</span></div>
+  <div class="stat" data-reveal="240"><b data-ticker="1380690">0</b><span>transistors when placed in SkyWater 130 nm silicon</span></div>
 </section>
 
 <!-- =============================================================== STORY -->
@@ -149,10 +150,24 @@
   </div>
 </section>
 
+
+<!-- =============================================================== SILICON -->
+<section class="siltease wrap">
+  <a class="silcard spotlight" href="silicon.html" data-reveal>
+    <div class="sil-img"><img src="img/silicon-blocks.jpg" alt="The Pixelstorm die in SkyWater 130 nm, rendered by KLayout, with its floorplan" loading="lazy"></div>
+    <div class="sil-txt">
+      <span class="eyebrow">New: from Verilog to silicon</span>
+      <h2>1.38 million transistors, <span class="grad">placed</span>.</h2>
+      <p>The same Verilog, synthesized into 145,800 real SkyWater 130 nm standard cells and placed row by row into a GDS layout you can open in KLayout. Dive from the whole die down to a single transistor, and spin real sky130 gates in 3D.</p>
+      <span class="go">Open the silicon page →</span>
+    </div>
+  </a>
+</section>
+
 <!-- =============================================================== COURSE -->
 <section class="course wrap">
   <div class="section-head" data-reveal>
-    <span class="eyebrow">A free course, 16 chapters</span>
+    <span class="eyebrow">A free course, 17 chapters</span>
     <h2>Learn it properly, down to the wires</h2>
   </div>
   <div class="parts">
@@ -160,7 +175,7 @@
     <a class="part spotlight" data-reveal="60" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/04-microarchitecture.md"><span class="pn">Part 2</span><h3>The hardware</h3><p>The block diagram, one instruction through every cycle, and a guided reading of the Verilog.</p><span class="chs">Chapters 4 to 6</span></a>
     <a class="part spotlight" data-reveal="120" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/07-divergence.md"><span class="pn">Part 3</span><h3>Performance</h3><p>Divergence, coalescing, bank conflicts, barriers, shuffles and atomics.</p><span class="chs">Chapters 7 to 9</span></a>
     <a class="part spotlight" data-reveal="180" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/11-graphics.md"><span class="pn">Part 4</span><h3>Applications and graphics</h3><p>Fifteen kernels, a triangle rasterizer and the Mandelbrot set.</p><span class="chs">Chapters 10 and 11</span></a>
-    <a class="part spotlight" data-reveal="240" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/12-make-it-better.md"><span class="pn">Part 5</span><h3>Build on it</h3><p>Nine exercises toward a faster GPU, and how it maps onto an NVIDIA H100.</p><span class="chs">Chapters 12 and 13</span></a>
+    <a class="part spotlight" data-reveal="240" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/14-silicon.md"><span class="pn">Part 5</span><h3>Build on it</h3><p>Nine exercises toward a faster GPU, a real NVIDIA H100 comparison, and the design as SkyWater 130 nm silicon.</p><span class="chs">Chapters 12 to 14</span></a>
   </div>
 </section>
 

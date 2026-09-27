@@ -1,6 +1,6 @@
 # 13. From Pixelstorm to a real GPU
 
-> **Part 5: Build on it**, chapter 13 of 16. About 15 minutes.
+> **Part 5: Build on it**, chapter 13 of 17. About 15 minutes.
 
 **In this chapter you will learn**
 
@@ -95,4 +95,4 @@ Compare the output line by line with `node tools/pixelstorm.js asm kernels/01_ve
 
 ---
 
-[Previous: 12. Make it better](12-make-it-better.md) | [Course map](00-start-here.md) | [Next: 14. References](14-references.md)
+[Previous: 12. Make it better](12-make-it-better.md) | [Course map](00-start-here.md) | [Next: 14. From Verilog to silicon](14-silicon.md)

@@ -1,6 +1,6 @@
 # 9. Synchronization: barriers, shuffles, votes, atomics
 
-> **Part 3: Performance**, chapter 9 of 16. About 20 minutes.
+> **Part 3: Performance**, chapter 9 of 17. About 20 minutes.
 
 **In this chapter you will learn**
 

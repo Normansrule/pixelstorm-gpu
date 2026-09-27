@@ -1,0 +1,21 @@
+name: silicon
+# RTL -> SkyWater 130 nm gates (Yosys) -> placed layout (GDS) -> KLayout renders.
+# Uploads the GDS, netlist and report as an artifact; attaches them to releases.
+on:
+  workflow_dispatch:
+  release: { types: [published] }
+permissions: { contents: write }
+jobs:
+  gds:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y yosys python3-pip
+      - run: pip install --break-system-packages klayout numpy pillow
+      - run: make silicon
+      - run: cd build/silicon && zip -9 pixelstorm-s130-layout.zip ps_s130.gds ps_s130_netlist.v stat.txt report.json
+      - uses: actions/upload-artifact@v4
+        with: { name: pixelstorm-s130-layout, path: build/silicon/pixelstorm-s130-layout.zip }
+      - if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" build/silicon/pixelstorm-s130-layout.zip --clobber
+        env: { GH_TOKEN: "${{ github.token }}" }

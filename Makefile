@@ -3,7 +3,7 @@ KERNEL ?= kernels/01_vector_add.psa
 PORT   ?= 8000
 
 
-.PHONY: record docs site help setup test test1 lint synth wave run sim traces bundle figures isa serve all clean
+.PHONY: silicon gds record docs site help setup test test1 lint synth wave run sim traces bundle figures isa serve all clean
 
 help:
 	@echo "make setup    install tools (Ubuntu / WSL2)"
@@ -19,6 +19,8 @@ help:
 	@echo "make all      test, traces, figures, docs"
 	@echo "make serve    home, 3D chip, visualizer and labs at http://localhost:$(PORT)"
 	@echo "make record   record the 3D explorer into docs/img/chip.gif"
+	@echo "make silicon  synthesize to SkyWater 130 nm, place, write GDS, render with KLayout"
+	@echo "make gds      open the layout in KLayout"
 
 setup:
 	bash scripts/setup_ubuntu.sh
@@ -54,6 +56,7 @@ figures: traces
 
 docs:
 	python3 tools/rtl_chapter.py
+	python3 tools/silicon/chapter.py
 	python3 tools/course.py
 
 all: test figures docs
@@ -63,6 +66,18 @@ bundle:
 
 isa:
 	./pixelstorm isa-md
+
+silicon:                ## RTL -> sky130 gates -> placed GDS -> KLayout pictures
+	bash tools/silicon/fetch_pdk.sh
+	mkdir -p build/silicon
+	yosys -q -s tools/silicon/synth.ys
+	python3 tools/silicon/place.py
+	python3 tools/silicon/render.py
+	python3 tools/silicon/chapter.py
+	python3 tools/course.py
+
+gds: silicon            ## open the layout in KLayout
+	klayout build/silicon/ps_s130.gds &
 
 record:
 	@echo "needs: pip install playwright pillow && playwright install chromium, and make serve running"
