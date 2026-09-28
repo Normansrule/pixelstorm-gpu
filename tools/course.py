@@ -26,7 +26,7 @@ CH = [
    ('Why does STG put its data register in the Rd field?','A store writes no register, so Rd is free. Reusing it keeps one format with three register fields plus an immediate, and keeps the decoder small.')]),
  (4,'04-microarchitecture.md','Microarchitecture: the block diagram',2,20,
   ['what every Verilog module does and how they connect','the state machine that moves one instruction through an SM','the parameters you can change and re-test'],
-  [('3D chip explorer', SITE+'/chip.html'),('Visualizer: the SM diagrams are this chapter, animated', V),('Figures: top level, SM internals, FSM', 'img/fig-sm-internals.svg')],
+  [('3D guided tour: every block, step by step', SITE+'/chip.html?tour'),('Visualizer: the SM diagrams are this chapter, animated', V),('Figures: top level, SM internals, FSM', 'img/fig-sm-internals.svg')],
   [('How many cycles does an ADD take? A shared-memory load with a 2-way bank conflict?','ADD: 5 (SCHED, FETCH, DECODE, EXEC, WB). The shared load: 4 cycles to reach MEM, 2 bank passes plus 1 cycle to finish MEM, then WB = 8 cycles.'),
    ('What stops both SMs from loading global memory at the same time?','There is one memory arbiter with one outstanding request. The second SM waits until the first request returns. Real GPUs have many memory channels and many requests in flight.')]),
  (5,'05-instruction-lifecycle.md','Life of one instruction',2,15,
@@ -76,22 +76,31 @@ CH = [
   [('Which Nsight Compute metric corresponds to Pixelstorm\'s bank passes?','"Shared memory bank conflicts" (per instruction or per request).'),
    ('How many SMs does an H100 SXM5 have enabled, and how many lanes per warp?','132 SMs, 32 lanes per warp.')]),
  (14,'14-silicon.md','From Verilog to silicon',5,35,
-  ['how the same Verilog becomes 129,171 real SkyWater 130 nm standard cells and 1.37 million transistors','what a standard cell, a placement row and a GDS layout are, and how to read one in KLayout','which steps of a real tapeout Pixelstorm runs, and how to finish the rest with OpenROAD'],
+  ['how the same Verilog becomes {cells} real SkyWater 130 nm standard cells and {mtr} million transistors','what a standard cell, a placement row and a GDS layout are, and how to read one in KLayout','which steps of a real tapeout Pixelstorm runs, and how to finish the rest with OpenROAD'],
   [('Silicon page: die, zoom from die to transistor, 3D standard cells', SITE+'/silicon.html'),('Command line: make silicon && make gds', None)],
   [('Why does the tapeout configuration use 2 warps of 4 lanes and 8 registers instead of the simulated 4 x 8 x 16?','Every storage bit becomes a flip-flop (about 24 transistors) plus multiplexers to read it. A full-size register file with 24 read ports would be hundreds of thousands of cells. Real chips use dense SRAM macros for that; without them, the design has to shrink.'),
    ('In a standard cell, where exactly is a transistor?','Wherever a polysilicon line (red) crosses a diffusion region (green). The poly is the gate; the diffusion on either side is source and drain. Counting those crossings gives 4 for a NAND2 and 28 for a full adder.'),
-   ('The layout has 137,468 extra tap, decap and filler cells. What are they for?','Taps tie the wells to power so the chip does not latch up; decaps are capacitors that steady the supply when many gates switch at once; fillers keep the rows continuous for manufacturing. A real flow inserts all three.')]),
+   ('The layout has {fillers} extra tap, decap and filler cells. What are they for?','Taps tie the wells to power so the chip does not latch up; decaps are capacitors that steady the supply when many gates switch at once; fillers keep the rows continuous for manufacturing. A real flow inserts all three.')]),
  (15,'15-references.md','References',6,5,[],[],[]),
  (16,'16-glossary.md','Glossary',6,5,[],[],[]),
  (17,'17-troubleshooting.md','Troubleshooting',6,5,[],[],[]),
 ]
 PART = {1:'Part 1: Concepts',2:'Part 2: The hardware',3:'Part 3: Performance',4:'Part 4: Applications and graphics',5:'Part 5: Build on it',6:'Appendix'}
 
+def _sil():
+    p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'web', 'data', 'silicon.json')
+    if not os.path.exists(p): return {}
+    import json; d = json.load(open(p))
+    return {'cells': f"{d['cells']:,}", 'mtr': f"{d['transistors_logic'] / 1e6:.2f}", 'fillers': f"{d['fillers']:,}"}
+SIL = _sil()
+def fill(x):
+    for k, v in SIL.items(): x = x.replace('{' + k + '}', v)
+    return x
 def header(c):
     n,f,t,p,m,learn,see,qa=c
     h=f'# {n}. {t}\n\n> **{PART[p]}**, chapter {n} of {len(CH)}. About {m} minutes.\n'
     if learn:
-        h+='\n**In this chapter you will learn**\n\n'+''.join(f'- {x}\n' for x in learn)
+        h+='\n**In this chapter you will learn**\n\n'+''.join(f'- {fill(x)}\n' for x in learn)
     if see:
         h+='\n**See it live:** '+'; '.join((f'[{a}]({b})' if b else a) for a,b in see)+'\n'
     return h+'\n---\n'
@@ -100,7 +109,7 @@ def footer(i):
     s=''
     if qa:
         s+='\n## Check yourself\n\n'
-        for q,a in qa: s+=f'<details>\n<summary>{q}</summary>\n\n{a}\n\n</details>\n\n'
+        for q,a in qa: s+=f'<details>\n<summary>{fill(q)}</summary>\n\n{fill(a)}\n\n</details>\n\n'
     prev = CH[i-1] if i>0 else None; nxt = CH[i+1] if i<len(CH)-1 else None
     s+='\n---\n\n'
     s+= (f'[Previous: {prev[0]}. {prev[2]}]({prev[1]})' if prev else '[Previous: Course map](00-start-here.md)')

@@ -73,6 +73,7 @@ silicon:                ## RTL -> sky130 gates -> placed GDS -> KLayout pictures
 	yosys -q -s tools/silicon/synth.ys
 	python3 tools/silicon/place.py
 	python3 tools/silicon/render.py
+	node tools/figures.js
 	python3 tools/silicon/chapter.py
 	python3 tools/course.py
 

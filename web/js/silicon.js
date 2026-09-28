@@ -26,13 +26,14 @@
       const r = document.createElementNS(NS, 'rect'); Object.entries({ x: X, y: Y, width: w, height: h }).forEach(([k, v]) => r.setAttribute(k, v));
       const tip = `${b.name}: ${fmt(b.cells)} cells, ${(b.area_um2 / 1e6).toFixed(3)} mm² of cell area (${(100 * b.area_um2 / S.cell_area_um2).toFixed(1)}% of the logic)`;
       r.addEventListener('mouseenter', () => { $('dieTip').textContent = tip; });
-      r.addEventListener('mouseleave', () => { $('dieTip').textContent = 'Hover a block. Every one of the 129,171 cells is a real sky130 layout.'; });
+      r.addEventListener('mouseleave', () => { $('dieTip').textContent = `Hover a block. Every one of the ${fmt(S.cells)} cells is a real sky130 layout.`; });
       svg.appendChild(r);
       if (h > 120 && w > 150) {
         const t = document.createElementNS(NS, 'text'); t.setAttribute('x', X + w / 2); t.setAttribute('y', Y + h / 2); t.setAttribute('text-anchor', 'middle');
         t.setAttribute('font-size', Math.min(96, w / 4.6)); t.textContent = short(b); svg.appendChild(t);
       }
     }
+    $('dieTip').textContent = `Hover a block. Every one of the ${fmt(S.cells)} cells is a real sky130 layout.`;
     $('ovToggle').addEventListener('change', (e) => $('die').classList.toggle('noov', !e.target.checked));
   }
 

@@ -4,7 +4,7 @@
 
 **In this chapter you will learn**
 
-- how the same Verilog becomes 129,171 real SkyWater 130 nm standard cells and 1.37 million transistors
+- how the same Verilog becomes 145,800 real SkyWater 130 nm standard cells and 1.38 million transistors
 - what a standard cell, a placement row and a GDS layout are, and how to read one in KLayout
 - which steps of a real tapeout Pixelstorm runs, and how to finish the rest with OpenROAD
 
@@ -38,11 +38,11 @@ In simulation, every register and memory word is free. In silicon, each storage 
 | | |
 |---|---|
 | Process | SkyWater 130 nm, `sky130_fd_sc_hd` high-density cells, typical corner (25 °C, 1.80 V) |
-| Logic cells | **129,171** standard cells, of which 10,592 are flip-flops |
-| Transistors | **1,367,810** in the logic, counted from the layout (every place polysilicon crosses diffusion) |
-| Cell area | 1,197,396 µm² |
-| Die | 1672.04 x 1458.24 µm = **2.438 mm²**, core utilization 57.7% |
-| Physical-only cells | 137,468 tap, decap and filler cells |
+| Logic cells | **145,800** standard cells, of which 10,592 are flip-flops |
+| Transistors | **1,380,690** in the logic, counted from the layout (every place polysilicon crosses diffusion) |
+| Cell area | 1,194,606 µm² |
+| Die | 1670.2 x 1455.52 µm = **2.431 mm²**, core utilization 57.7% |
+| Physical-only cells | 145,607 tap, decap and filler cells |
 | I/O pins | 441 |
 
 Exact counts depend on the Yosys version: newer releases optimize the logic further (Yosys 0.33 gives 145,800 cells, 0.52 gives 129,171 for the same Verilog). For scale: an NVIDIA H100 is about 814 mm² with 80 billion transistors in a 4 nm-class process, roughly 58,000 times Pixelstorm's transistor count.
@@ -79,7 +79,7 @@ The top half of each cell sits in an n-well and holds the PMOS (p-type) transist
 
 `tools/silicon/place.py` does the job of a placer in five steps:
 
-1. **Flatten.** Walk the Yosys netlist, give each of the 129,171 cells a global instance, and attribute it to a block. Register-file and shared-memory flip-flops are recognized by their net names (`rf`, `smem`); other logic joins the block it is most connected to.
+1. **Flatten.** Walk the Yosys netlist, give each of the 145,800 cells a global instance, and attribute it to a block. Register-file and shared-memory flip-flops are recognized by their net names (`rf`, `smem`); other logic joins the block it is most connected to.
 2. **Floorplan.** Size a rectangle for each block at a target utilization and slice the die: instruction memory on top, each SM as a register file, four ALU lanes and a control and shared-memory band, and the arbiter at the bottom.
 3. **Global placement.** Ten rounds of force-directed placement: each cell moves toward the centroid of the nets it touches, then cells are re-spread so no region over-fills.
 4. **Legalization.** Snap every cell into real rows: 0.46 µm sites, 2.72 µm rows, alternating orientation so neighbouring rows share a power rail. Then fill every gap with tap cells (every 13.8 µm), decap cells and fillers, as a real flow does.
@@ -155,7 +155,7 @@ Wherever a polysilicon line (red) crosses a diffusion region (green). The poly i
 </details>
 
 <details>
-<summary>The layout has 137,468 extra tap, decap and filler cells. What are they for?</summary>
+<summary>The layout has 145,607 extra tap, decap and filler cells. What are they for?</summary>
 
 Taps tie the wells to power so the chip does not latch up; decaps are capacitors that steady the supply when many gates switch at once; fillers keep the rows continuous for manufacturing. A real flow inserts all three.
 

@@ -361,7 +361,16 @@ void main(){
       G.to('.hero-inner', { y: -80, opacity: 0.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
     }
   }
+  async function siliconNumbers() {               // silicon counts come from web/data/silicon.json (Yosys-version dependent)
+    try {
+      const S = await (await fetch('data/silicon.json')).json();
+      const v = { cells: S.cells.toLocaleString('en-US'), mtr: (S.transistors_logic / 1e6).toFixed(2) };
+      document.querySelectorAll('[data-s]').forEach(e => { if (v[e.dataset.s]) e.textContent = v[e.dataset.s]; });
+      document.querySelectorAll('[data-s-ticker]').forEach(e => { e.dataset.ticker = S.transistors_logic; });
+    } catch (e) { /* keep the defaults in the HTML */ }
+  }
   document.addEventListener('DOMContentLoaded', async () => {
+    await siliconNumbers();
     heroIntro();
     UI.init();
     storm();

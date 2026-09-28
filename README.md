@@ -6,7 +6,7 @@ A complete GPU in Verilog that renders shaders, triangles and fractals, placed a
 
 <p align="center">
 <a href="https://normansrule.github.io/pixelstorm-gpu/"><b>Website</b></a> &nbsp;|&nbsp;
-<a href="https://normansrule.github.io/pixelstorm-gpu/chip.html"><b>3D chip explorer</b></a> &nbsp;|&nbsp;
+<a href="https://normansrule.github.io/pixelstorm-gpu/chip.html?tour"><b>3D guided tour</b></a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/silicon.html"><b>Silicon</b></a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/visualizer.html?tour">Guided tour</a> &nbsp;|&nbsp;
 <a href="https://normansrule.github.io/pixelstorm-gpu/labs.html">Labs</a> &nbsp;|&nbsp;
@@ -53,9 +53,9 @@ make gds          # open build/silicon/ps_s130.gds in KLayout (Display, Full Hie
 
 | | |
 |---|---|
-| Standard cells | **129,171** (10,592 flip-flops) plus 137,468 tap, decap and filler cells |
-| Transistors | **1,367,810**, counted from the layout |
-| Die | 1672.04 x 1458.24 µm = **2.438 mm²**, 57.7% utilization |
+| Standard cells | <!--s:cells-->**145,800** (10,592 flip-flops) plus 145,607 tap, decap and filler cells<!--/s--> |
+| Transistors | <!--s:tr-->**1,380,690**, counted from the layout<!--/s--> |
+| Die | <!--s:die-->1670.2 x 1455.52 µm = **2.431 mm²**, 57.7% utilization<!--/s--> |
 | Status | placed, not yet routed: clock tree, routing and sign-off are the OpenLane exercise in [chapter 14](docs/14-silicon.md) |
 
 | The die (KLayout) | Floorplan | 9 µm: single transistors |

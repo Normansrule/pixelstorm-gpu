@@ -8,7 +8,7 @@
 - the state machine that moves one instruction through an SM
 - the parameters you can change and re-test
 
-**See it live:** [3D chip explorer](https://normansrule.github.io/pixelstorm-gpu/chip.html); [Visualizer: the SM diagrams are this chapter, animated](https://normansrule.github.io/pixelstorm-gpu/visualizer.html); [Figures: top level, SM internals, FSM](img/fig-sm-internals.svg)
+**See it live:** [3D guided tour: every block, step by step](https://normansrule.github.io/pixelstorm-gpu/chip.html?tour); [Visualizer: the SM diagrams are this chapter, animated](https://normansrule.github.io/pixelstorm-gpu/visualizer.html); [Figures: top level, SM internals, FSM](img/fig-sm-internals.svg)
 
 ---
 

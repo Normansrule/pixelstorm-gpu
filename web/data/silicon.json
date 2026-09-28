@@ -1,246 +1,246 @@
 {
  "config": "ps_s130: 2 SMs, 2 warps x 4 lanes, 8 registers, 32-word shared memory, 64-instruction memory",
  "process": "SkyWater 130 nm, sky130_fd_sc_hd (high density) standard cells, typical corner 25 C 1.80 V",
- "cells": 129171,
+ "cells": 145800,
  "flops": 10592,
- "fillers": 137468,
- "cell_area_um2": 1197396,
+ "fillers": 145607,
+ "cell_area_um2": 1194606,
  "core_um": [
-  1552.04,
-  1338.24
+  1550.2,
+  1335.52
  ],
  "die_um": [
-  1672.04,
-  1458.24
+  1670.2,
+  1455.52
  ],
- "die_mm2": 2.438,
+ "die_mm2": 2.431,
  "utilization": 0.577,
  "blocks": [
   {
    "id": "arb",
    "name": "memory arbiter",
-   "cells": 352,
-   "area_um2": 7013,
+   "cells": 851,
+   "area_um2": 7645,
    "rect_um": [
     60.0,
     60.0,
-    1011.08,
+    1021.2,
     13.6
    ]
   },
   {
    "id": "cmem",
    "name": "constants",
-   "cells": 878,
-   "area_um2": 22752,
+   "cells": 1372,
+   "area_um2": 23359,
    "rect_um": [
-    1306.14,
-    1267.68,
-    305.9,
-    130.56
+    1304.76,
+    1262.24,
+    305.44,
+    133.28
    ]
   },
   {
    "id": "disp",
    "name": "dispatcher",
-   "cells": 189,
-   "area_um2": 2509,
+   "cells": 236,
+   "area_um2": 2506,
    "rect_um": [
-    1249.56,
+    1274.86,
     60.0,
-    362.48,
+    335.34,
     13.6
    ]
   },
   {
    "id": "imem",
    "name": "instruction memory",
-   "cells": 4356,
-   "area_um2": 92698,
+   "cells": 6438,
+   "area_um2": 95223,
    "rect_um": [
     60.0,
-    1267.68,
-    1246.14,
-    130.56
+    1262.24,
+    1244.76,
+    133.28
    ]
   },
   {
    "id": "sm0.ctrl",
    "name": "SM 0 scheduler + LSU + control",
-   "cells": 10628,
-   "area_um2": 84670,
+   "cells": 15547,
+   "area_um2": 101225,
    "rect_um": [
-    433.52,
+    360.84,
     73.6,
-    402.5,
-    364.48
+    474.26,
+    369.92
    ]
   },
   {
    "id": "sm0.lane0",
    "name": "SM 0 lane 0",
-   "cells": 9386,
-   "area_um2": 63551,
+   "cells": 9054,
+   "area_um2": 61725,
    "rect_um": [
     60.0,
-    438.08,
+    443.52,
     193.66,
-    560.32
+    549.44
    ]
   },
   {
    "id": "sm0.lane1",
    "name": "SM 0 lane 1",
-   "cells": 9275,
-   "area_um2": 62815,
+   "cells": 8931,
+   "area_um2": 61281,
    "rect_um": [
     253.66,
-    438.08,
+    443.52,
     193.66,
-    560.32
+    549.44
    ]
   },
   {
    "id": "sm0.lane2",
    "name": "SM 0 lane 2",
-   "cells": 9252,
-   "area_um2": 62616,
+   "cells": 8938,
+   "area_um2": 61041,
    "rect_um": [
     447.32,
-    438.08,
+    443.52,
     193.66,
-    560.32
+    549.44
    ]
   },
   {
    "id": "sm0.lane3",
    "name": "SM 0 lane 3",
-   "cells": 9223,
-   "area_um2": 62496,
+   "cells": 9267,
+   "area_um2": 62563,
    "rect_um": [
     640.98,
-    438.08,
-    195.04,
-    560.32
+    443.52,
+    194.12,
+    549.44
    ]
   },
   {
    "id": "sm0.rf",
    "name": "SM 0 register file",
-   "cells": 7167,
-   "area_um2": 121050,
+   "cells": 11458,
+   "area_um2": 120125,
    "rect_um": [
     60.0,
-    998.4,
-    776.02,
+    992.96,
+    775.1,
     269.28
    ]
   },
   {
    "id": "sm0.smem",
    "name": "SM 0 shared memory",
-   "cells": 6766,
-   "area_um2": 78618,
+   "cells": 5231,
+   "area_um2": 64303,
    "rect_um": [
     60.0,
     73.6,
-    373.52,
-    364.48
+    300.84,
+    369.92
    ]
   },
   {
    "id": "sm1.ctrl",
    "name": "SM 1 scheduler + LSU + control",
-   "cells": 10446,
-   "area_um2": 82304,
+   "cells": 15108,
+   "area_um2": 98762,
    "rect_um": [
-    1215.52,
+    1149.28,
     73.6,
-    396.52,
-    359.04
+    460.92,
+    369.92
    ]
   },
   {
    "id": "sm1.lane0",
    "name": "SM 1 lane 0",
-   "cells": 9452,
-   "area_um2": 63924,
+   "cells": 9024,
+   "area_um2": 61792,
    "rect_um": [
-    836.02,
-    432.64,
+    835.1,
+    443.52,
     193.66,
-    563.04
+    546.72
    ]
   },
   {
    "id": "sm1.lane1",
    "name": "SM 1 lane 1",
-   "cells": 9222,
-   "area_um2": 62557,
+   "cells": 8962,
+   "area_um2": 61431,
    "rect_um": [
-    1029.68,
-    432.64,
+    1028.76,
+    443.52,
     193.66,
-    563.04
+    546.72
    ]
   },
   {
    "id": "sm1.lane2",
    "name": "SM 1 lane 2",
-   "cells": 9330,
-   "area_um2": 63223,
+   "cells": 8951,
+   "area_um2": 61217,
    "rect_um": [
-    1223.34,
-    432.64,
+    1222.42,
+    443.52,
     193.66,
-    563.04
+    546.72
    ]
   },
   {
    "id": "sm1.lane3",
    "name": "SM 1 lane 3",
-   "cells": 9262,
-   "area_um2": 62879,
+   "cells": 9033,
+   "area_um2": 61331,
    "rect_um": [
-    1417.0,
-    432.64,
-    195.04,
-    563.04
+    1416.08,
+    443.52,
+    194.12,
+    546.72
    ]
   },
   {
    "id": "sm1.rf",
    "name": "SM 1 register file",
-   "cells": 7211,
-   "area_um2": 121533,
+   "cells": 11447,
+   "area_um2": 120239,
    "rect_um": [
-    836.02,
-    995.68,
-    776.02,
+    835.1,
+    990.24,
+    775.1,
     272.0
    ]
   },
   {
    "id": "sm1.smem",
    "name": "SM 1 shared memory",
-   "cells": 6632,
-   "area_um2": 78949,
+   "cells": 5761,
+   "area_um2": 67386,
    "rect_um": [
-    836.02,
+    835.1,
     73.6,
-    379.5,
-    359.04
+    314.18,
+    369.92
    ]
   },
   {
    "id": "top",
    "name": "top-level",
-   "cells": 144,
-   "area_um2": 1239,
+   "cells": 191,
+   "area_um2": 1451,
    "rect_um": [
-    1071.08,
+    1081.2,
     60.0,
-    178.48,
+    193.66,
     13.6
    ]
   }
@@ -248,111 +248,111 @@
  "top_cell_types": [
   [
    "nand2_1",
-   20117
-  ],
-  [
-   "xnor2_1",
-   11616
-  ],
-  [
-   "nor2_1",
-   11067
+   20274
   ],
   [
    "a21oi_1",
-   10714
+   15275
   ],
   [
-   "edfxtp_1",
-   10202
+   "nor2_1",
+   15082
   ],
   [
    "o21ai_0",
-   10127
+   12173
+  ],
+  [
+   "xnor2_1",
+   10789
+  ],
+  [
+   "dfxtp_1",
+   10592
   ],
   [
    "xor2_1",
-   7929
+   7643
   ],
   [
    "mux4_2",
-   6605
-  ],
-  [
-   "maj3_1",
-   5082
-  ],
-  [
-   "mux2_1",
-   3974
+   7296
   ],
   [
    "mux2i_1",
-   3542
+   7146
   ],
   [
-   "lpflow_isobufsrc_1",
-   2985
+   "maj3_1",
+   5300
   ],
   [
    "a22oi_1",
-   1969
+   4435
   ],
   [
-   "clkinv_1",
-   1832
+   "mux2_1",
+   3671
+  ],
+  [
+   "nor3_1",
+   2243
+  ],
+  [
+   "a31oi_1",
+   2214
+  ],
+  [
+   "lpflow_isobufsrc_1",
+   1984
   ],
   [
    "nand3_1",
-   1776
-  ],
-  [
-   "nand2b_1",
-   1501
+   1819
   ]
  ],
  "filler_types": [
   [
    "tapvpwrvgnd_1",
-   47102
+   48602
   ],
   [
    "decap_12",
-   37648
+   34006
   ],
   [
    "fill_1",
-   14063
+   16821
   ],
   [
    "decap_8",
-   10692
+   12692
   ],
   [
    "decap_4",
-   7735
+   9410
   ],
   [
    "fill_2",
-   7248
+   8931
   ],
   [
    "decap_6",
-   6719
+   7978
   ],
   [
    "decap_3",
-   6261
+   7167
   ]
  ],
  "io_pins": 441,
- "gds_mb": 14.7,
- "transistors_logic": 1367810,
- "transistors_total": 1505920,
+ "gds_mb": 15.8,
+ "transistors_logic": 1380690,
+ "transistors_total": 1523196,
  "zooms": [
   {
    "file": "img/silicon-zoom-0.jpg",
-   "width_um": 1688.04
+   "width_um": 1686.2
   },
   {
    "file": "img/silicon-zoom-1.jpg",
@@ -377,11 +377,11 @@
  ],
  "zoom_center_um": [
   362.36,
-  787.88
+  786.68
  ],
  "frame_um": [
-  1688.04,
-  1474.24
+  1686.2,
+  1471.52
  ],
  "layers": [
   {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Pixelstorm — 3D chip explorer</title>
+<title>Pixelstorm — 3D chip explorer and guided tour</title>
 <meta name="description" content="Fly around the Pixelstorm GPU in 3D while it runs a real Verilog simulation: lanes execute, memory requests travel to DRAM, and the framebuffer paints above the die.">
 <meta name="theme-color" content="#05070B">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,8 +68,25 @@
     <div id="iLinks" class="ilinks"></div>
   </aside>
 
+  <!-- ============ guided tour ============ -->
+  <aside class="tour glass" id="tour" hidden aria-live="polite">
+    <div class="t-top"><span class="t-step" id="tStep"></span><span class="eyebrow">How a GPU works</span>
+      <button class="t-x" id="tClose" type="button" aria-label="Close the tour">✕</button></div>
+    <h2 id="tTitle"></h2>
+    <p id="tText"></p>
+    <div class="t-ladder" id="tLadderWrap"><span class="t-lab">Where the data lives <i>Pixelstorm</i> <i>real GPU</i></span><div id="tLadder"></div></div>
+    <p class="t-real"><b>In a real GPU:</b> <span id="tReal"></span></p>
+    <div class="t-dots" id="tDots"></div>
+    <div class="t-nav">
+      <button class="tbtn" id="tPrev" type="button">Back</button>
+      <label class="t-auto"><input type="checkbox" id="tAuto"> Autoplay</label>
+      <button class="tbtn play" id="tNext" type="button">Next</button>
+    </div>
+  </aside>
+
   <!-- ============ camera bar ============ -->
   <div class="cambar glass" role="toolbar" aria-label="Camera">
+    <button type="button" id="tourBtn" class="tour-btn">How it works</button>
     <button type="button" data-cam="overview" class="on">Overview</button>
     <button type="button" data-cam="sm0">SM 0</button>
     <button type="button" data-cam="sm1">SM 1</button>

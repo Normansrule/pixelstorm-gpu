@@ -44,7 +44,7 @@
     <h1 data-reveal="80"><span class="shimmer">A GPU you can</span><br><span class="grad">watch paint.</span></h1>
     <p class="lede" data-reveal="160">Pixelstorm is a complete Graphics Processing Unit (GPU) written in register-transfer level (RTL) Verilog. It shades pixels, rasterizes triangles and renders fractals, and every clock cycle of it is yours to explore: in 3D, cycle by cycle, and line by line.</p>
     <div class="cta" data-reveal="240">
-      <a class="ubtn primary" href="chip.html">Explore the chip in 3D <span class="arr">→</span></a>
+      <a class="ubtn primary" href="chip.html?tour">How a GPU works, in 3D <span class="arr">→</span></a>
       <a class="ubtn" href="visualizer.html?tour">Take the guided tour</a>
       <a class="ubtn" href="https://github.com/Normansrule/pixelstorm-gpu/blob/main/docs/00-start-here.md">Start the course</a>
     </div>
@@ -65,7 +65,7 @@
   <div class="stat" data-reveal="60"><b data-ticker="40">0</b><span>instructions, each mapped to CUDA, PTX and SASS</span></div>
   <div class="stat" data-reveal="120"><b data-ticker="30">0</b><span>RTL test runs on every push, 1 and 2 SMs</span></div>
   <div class="stat" data-reveal="180"><b>0</b><span>cycles of disagreement between the Verilog and the golden model</span></div>
-  <div class="stat" data-reveal="240"><b data-ticker="1367810">0</b><span>transistors when placed in SkyWater 130 nm silicon</span></div>
+  <div class="stat" data-reveal="240"><b data-ticker="1380690" data-s-ticker="tr">0</b><span>transistors when placed in SkyWater 130 nm silicon</span></div>
 </section>
 
 <!-- =============================================================== STORY -->
@@ -157,8 +157,8 @@
     <div class="sil-img"><img src="img/silicon-blocks.jpg" alt="The Pixelstorm die in SkyWater 130 nm, rendered by KLayout, with its floorplan" loading="lazy"></div>
     <div class="sil-txt">
       <span class="eyebrow">New: from Verilog to silicon</span>
-      <h2>1.37 million transistors, <span class="grad">placed</span>.</h2>
-      <p>The same Verilog, synthesized into 129,171 real SkyWater 130 nm standard cells and placed row by row into a GDS layout you can open in KLayout. Dive from the whole die down to a single transistor, and spin real sky130 gates in 3D.</p>
+      <h2><span data-s="mtr">1.38</span> million transistors, <span class="grad">placed</span>.</h2>
+      <p>The same Verilog, synthesized into <span data-s="cells">145,800</span> real SkyWater 130 nm standard cells and placed row by row into a GDS layout you can open in KLayout. Dive from the whole die down to a single transistor, and spin real sky130 gates in 3D.</p>
       <span class="go">Open the silicon page →</span>
     </div>
   </a>

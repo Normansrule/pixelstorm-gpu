@@ -56,7 +56,7 @@ Pixelstorm is a small but complete GPU (Graphics Processing Unit) written in Ver
 |---|---|---|
 | [12. Make it better](12-make-it-better.md) | 30 min | Nine concrete improvements, each one a real idea in commercial GPUs |
 | [13. From Pixelstorm to a real GPU](13-real-world-gpus.md) | 15 min | How to recognize the parts on a real graphics card and in a die photo |
-| [14. From Verilog to silicon](14-silicon.md) | 35 min | How the same Verilog becomes 129,171 real SkyWater 130 nm standard cells and 1.37 million transistors |
+| [14. From Verilog to silicon](14-silicon.md) | 35 min | How the same Verilog becomes {cells} real SkyWater 130 nm standard cells and {mtr} million transistors |
 
 ### Appendix
 
