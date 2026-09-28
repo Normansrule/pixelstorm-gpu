@@ -33,7 +33,7 @@ In simulation, every register and memory word is free. In silicon, each storage 
 | Physical-only cells | {fill} tap, decap and filler cells |
 | I/O pins | {io} |
 
-For scale: an NVIDIA H100 is about 814 mm² with 80 billion transistors in a 4 nm-class process, roughly {ratio} times Pixelstorm's transistor count.
+Exact counts depend on the Yosys version: newer releases optimize the logic further (Yosys 0.33 gives 145,800 cells, 0.52 gives 129,171 for the same Verilog). For scale: an NVIDIA H100 is about 814 mm² with 80 billion transistors in a 4 nm-class process, roughly {ratio} times Pixelstorm's transistor count.
 
 ![Where the area goes](img/fig-silicon-area.svg)
 

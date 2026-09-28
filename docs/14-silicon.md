@@ -4,7 +4,7 @@
 
 **In this chapter you will learn**
 
-- how the same Verilog becomes 145,800 real SkyWater 130 nm standard cells and 1.38 million transistors
+- how the same Verilog becomes 129,171 real SkyWater 130 nm standard cells and 1.37 million transistors
 - what a standard cell, a placement row and a GDS layout are, and how to read one in KLayout
 - which steps of a real tapeout Pixelstorm runs, and how to finish the rest with OpenROAD
 
@@ -45,7 +45,7 @@ In simulation, every register and memory word is free. In silicon, each storage 
 | Physical-only cells | 137,468 tap, decap and filler cells |
 | I/O pins | 441 |
 
-For scale: an NVIDIA H100 is about 814 mm² with 80 billion transistors in a 4 nm-class process, roughly 58,000 times Pixelstorm's transistor count.
+Exact counts depend on the Yosys version: newer releases optimize the logic further (Yosys 0.33 gives 145,800 cells, 0.52 gives 129,171 for the same Verilog). For scale: an NVIDIA H100 is about 814 mm² with 80 billion transistors in a 4 nm-class process, roughly 58,000 times Pixelstorm's transistor count.
 
 ![Where the area goes](img/fig-silicon-area.svg)
 
@@ -155,7 +155,7 @@ Wherever a polysilicon line (red) crosses a diffusion region (green). The poly i
 </details>
 
 <details>
-<summary>The layout has 145,607 extra tap, decap and filler cells. What are they for?</summary>
+<summary>The layout has 137,468 extra tap, decap and filler cells. What are they for?</summary>
 
 Taps tie the wells to power so the chip does not latch up; decaps are capacitors that steady the supply when many gates switch at once; fillers keep the rows continuous for manufacturing. A real flow inserts all three.
 

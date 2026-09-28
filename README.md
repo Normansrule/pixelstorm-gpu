@@ -53,9 +53,9 @@ make gds          # open build/silicon/ps_s130.gds in KLayout (Display, Full Hie
 
 | | |
 |---|---|
-| Standard cells | **145,800** (10,592 flip-flops) plus 145,607 tap, decap and filler cells |
-| Transistors | **1,380,690**, counted from the layout |
-| Die | 1670.2 x 1455.52 µm = **2.431 mm²**, 57.7% utilization |
+| Standard cells | **129,171** (10,592 flip-flops) plus 137,468 tap, decap and filler cells |
+| Transistors | **1,367,810**, counted from the layout |
+| Die | 1672.04 x 1458.24 µm = **2.438 mm²**, 57.7% utilization |
 | Status | placed, not yet routed: clock tree, routing and sign-off are the OpenLane exercise in [chapter 14](docs/14-silicon.md) |
 
 | The die (KLayout) | Floorplan | 9 µm: single transistors |
