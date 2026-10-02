@@ -56,6 +56,7 @@ Terms as they are used in this course. Where NVIDIA uses a different name, it is
 | **Occupancy** | Resident warps per SM divided by the maximum. Limited by registers, shared memory, thread and block slots. | occupancy lab |
 | **PC (Program Counter)** | Address of the next instruction. In Pixelstorm every thread has its own. | `lpc` |
 | **PDK (Process Design Kit)** | Everything a foundry provides to design for its process: layers, rules, device models, standard cells. | SkyWater SKY130 |
+| **Performance counter** | A hardware counter of events (instructions, active lanes, memory transactions) read after a run; what profilers report. | `perf_instr`, `perf_lanes`, `perf_mem` in `rtl/ps_gpu_top.v` |
 | **Pixel shader** [fragment shader] | The small program run once per pixel to compute its color. | kernels 12 to 15 |
 | **Placement** | Choosing a legal position for every standard cell in the rows of the core. | `tools/silicon/place.py` |
 | **PTX (Parallel Thread Execution)** | NVIDIA's virtual instruction set; compiled to SASS by the driver. | ISA table, chapter 3 |

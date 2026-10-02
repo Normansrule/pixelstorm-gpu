@@ -8,6 +8,7 @@ const fs = require('fs'), path = require('path');
 const W = require('../../web/js/pixelstorm.js');
 const slot = +process.argv[2], ppm = process.argv[3];
 const NW = +(process.argv[4] || 4), WS = +(process.argv[5] || 8);          // GPU shape of the build under test
+const extra = process.argv.slice(6);                                          // pN=V overrides, log=<sim log> for the performance counters
 // a ROM slot number, or k:<kernel.psa> for a kernel sent with ./pixelstorm upload
 let S, src;
 if (String(process.argv[2]).startsWith('k:')) {
@@ -19,8 +20,10 @@ if (String(process.argv[2]).startsWith('k:')) {
 }
 const a = W.assemble(src);
 const sim = new W.Simulator(Object.assign({}, W.DEFAULT_CFG, { numSms: 1, numWarps: NW, warpSize: WS }));
-sim.load(a.words, S.params, a.config.data);
-const m = sim.run(S.grid, S.block, { trace: false });
+const params = S.params.slice(); while (params.length < 16) params.push(0);
+for (const e of extra) { const m = /^p(\d+)=(-?\d+)$/.exec(e); if (m) params[+m[1]] = +m[2]; }
+sim.load(a.words, params, a.config.data);
+const m = sim.run(S.grid, S.block, { trace: true });
 const tok = fs.readFileSync(ppm, 'utf8').split(/\s+/).filter(Boolean);
 const Wd = +tok[1], Ht = +tok[2]; const px = tok.slice(4).map(Number);
 const SC = 12, fw = S.fb.width, fh = S.fb.height; const x0 = (640 - fw * SC) >> 1, y0 = ((480 - fh * SC) >> 1) - 16;
@@ -32,6 +35,21 @@ for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) {
   for (const sx of [x0 + x * SC, x0 + x * SC + SC / 2, x0 + x * SC + SC - 1]) {   // left edge, centre, right edge
   const i = (sy * Wd + sx) * 3; const got = [px[i], px[i + 1], px[i + 2]];
   if (got.join() !== want.join()) { if (bad < 5) console.log(`pixel (${x},${y}) at screen x=${sx}: ${got} vs model ${want}`); bad++; break; }
+  }
+}
+// performance counters reported over the UART must equal the model's
+const logArg = extra.find(e => e.startsWith('log='));
+if (logArg) {
+  const txt = fs.readFileSync(logArg.slice(4), 'latin1');
+  const u = /instr=([0-9A-F]{8}) lanes=([0-9A-F]{8}) mem=([0-9A-F]{8})/.exec(txt);
+  const commits = m.events.filter(e => e.ev === 'commit');
+  const want = { instr: commits.length, lanes: commits.reduce((t, e) => t + W.popcount(e.exe), 0), mem: m.events.filter(e => e.ev === 'mreq').length };
+  if (!u) { console.log('perf: no counter line in the UART output'); bad++; }
+  else {
+    const got = { instr: parseInt(u[1], 16), lanes: parseInt(u[2], 16), mem: parseInt(u[3], 16) };
+    const ok = got.instr === want.instr && got.lanes === want.lanes && got.mem === want.mem;
+    console.log(`perf counters: board instr=${got.instr} lanes=${got.lanes} mem=${got.mem}; model instr=${want.instr} lanes=${want.lanes} mem=${want.mem}; SIMD ${(100 * want.lanes / (want.instr * WS)).toFixed(1)}% ${ok ? 'MATCH' : 'MISMATCH'}`);
+    if (!ok) bad++;
   }
 }
 console.log(bad ? `FAIL: ${bad} of ${fw * fh} pixels differ` : `PASS: all ${fw * fh} framebuffer pixels on the VGA frame match the golden model (${S.name})`);

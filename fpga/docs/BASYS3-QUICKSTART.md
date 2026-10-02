@@ -60,6 +60,7 @@ On Windows, Vivado's Hardware Manager (Open Target, Auto Connect, Program Device
 | Set sw15..sw14 = 10 (1/1024 speed), press btnC again | the image clears and paints in over about three seconds: you are watching warps take turns |
 | Try the other kernels (sw1..sw0 = 00, 01, 11) | gradient, triangle, Mandelbrot zoom |
 | Press **btnU** | reset |
+| Look at the second status row after any run | **INSTR**, **SIMD** and **MEM**: the GPU's own performance counters (see step 7) |
 
 Expected readings on the Basys 3 for every kernel (from `make fpga-sim`, also in `fpga/docs/verification.json`). Real hardware runs the same circuit, so it should show exactly these numbers:
 
@@ -99,6 +100,42 @@ $b = [IO.File]::ReadAllBytes("rings.bin"); $p.Write($b, 0, $b.Length); $p.Close(
 ```
 
 The board stores the kernel in slot 3, runs it immediately, shows its name in the status line and lights **LED11** if the checksum was good. Limits: at most 256 instructions, 32 threads per block, a framebuffer in the first 32 KB.
+
+## 7. Read the GPU's performance counters
+
+After every kernel the second status row shows three hardware counters, the same metrics a GPU profiler such as NVIDIA Nsight Compute reports:
+
+| Counter | Meaning |
+|---|---|
+| INSTR | warp instructions retired |
+| SIMD | lane-operations / (INSTR x 4 lanes): how much of the GPU did useful work. Divergence lowers it |
+| MEM | memory transactions the arbiter granted (after coalescing) |
+
+The serial line carries them too: `... instr=<hex> lanes=<hex> mem=<hex>`. `make fpga-sim` checks every counter against the golden model, so the board's numbers are exact, not estimates. Try it: the gradient shader has no branches (100% SIMD), the Mandelbrot set diverges at its edge (well below 100%).
+
+Expected second-row readings on the Basys 3 (measured in `make fpga-sim`; the board should show exactly these):
+
+| Kernel | INSTR | SIMD | MEM |
+|---|---|---|---|
+| gradient_shader | 5,120 | 100% | 256 |
+| triangle_raster | 11,776 | 99% | 256 |
+| mandelbrot | 16,092 | 81% | 128 |
+| mandelbrot_zoom | 27,537 | 76% | 128 |
+
+## 8. Animation and live arguments
+
+| Switch | Effect |
+|---|---|
+| sw2 = 1 | **animation**: the board re-runs the kernel continuously, writing the frame number into constant `c[15]` before every run |
+| sw13..sw3 | a live 11-bit argument, written into constant `c[14]` at every launch |
+
+Kernels that read `c[15]` or `c[14]` animate or respond to the switches. Try it with the uploaded rings:
+
+```bash
+./pixelstorm upload fpga/kernels/rings.psa --port /dev/ttyUSB1
+```
+
+then set **sw2 = 1**: the rings flow outward. Flip sw13..sw3 and the colours shift while it runs. The four ROM kernels ignore `c[14]` and `c[15]`, so they look the same each frame. Set sw2 back to 0 to stop on the current frame.
 
 ## Troubleshooting
 

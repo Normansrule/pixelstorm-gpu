@@ -36,6 +36,8 @@ module ps_loader #(
     output reg [7:0]           fb_h,
     output reg [1:0]           kernel,
     input  wire                gpu_done,
+    input  wire                anim,      // re-launch forever, c[15] = frame number
+    input  wire [10:0]         arg,       // live argument from the switches, c[14]
     // upload port (pixel clock): overwrites ROM slot 3 with a kernel received over the UART
     input  wire                wclk,
     input  wire                u_we_i, input wire u_we_c, input wire u_we_f,
@@ -55,20 +57,21 @@ module ps_loader #(
         if (u_we_f) info[3 * 4 + u_addr[1:0]] <= u_data;
     end
 
-    localparam IDLE = 0, CLEAR = 1, LOADI = 2, LOADC = 3, GO = 4, RUN = 5;
+    localparam IDLE = 0, CLEAR = 1, LOADI = 2, LOADC = 3, GO = 4, RUN = 5, NEXT = 6;
+    reg [31:0] frame;
     reg [2:0]  st;
     reg [15:0] i;
     reg [15:0] npix;
     always @(posedge clk) begin
         imem_we <= 0; cmem_we <= 0; mem_we <= 0; launch <= 0;
-        if (rst) begin st <= IDLE; busy <= 0; finished <= 0; kernel <= 0; fb_w <= 0; fb_h <= 0; fb_addr <= 0; end
+        if (rst) begin st <= IDLE; busy <= 0; finished <= 0; kernel <= 0; fb_w <= 0; fb_h <= 0; fb_addr <= 0; frame <= 0; end
         else case (st)
             IDLE: if (start) begin
                 kernel <= sel; busy <= 1; finished <= 0;
                 grid_dim <= info[sel*4 + 0][15:0]; block_dim <= info[sel*4 + 1][15:0];
                 fb_addr <= info[sel*4 + 2]; fb_w <= info[sel*4 + 3][15:8]; fb_h <= info[sel*4 + 3][7:0];
                 npix <= info[sel*4 + 3][15:8] * info[sel*4 + 3][7:0];
-                i <= 0; st <= CLEAR;
+                i <= 0; frame <= 0; st <= CLEAR;
             end
             CLEAR: begin                                   // blank the framebuffer so you watch it fill
                 if (i < npix) begin mem_we <= 1; mem_addr <= fb_addr + i; mem_wdata <= 32'h000000; i <= i + 1; end
@@ -79,11 +82,19 @@ module ps_loader #(
                 if (i == N_I - 1) begin i <= 0; st <= LOADC; end else i <= i + 1;
             end
             LOADC: begin
-                cmem_we <= 1; cmem_addr <= i[3:0]; cmem_wdata <= cons[kernel * 16 + i];
+                cmem_we <= 1; cmem_addr <= i[3:0];
+                cmem_wdata <= (i == 14) ? {21'd0, arg} : (i == 15) ? frame : cons[kernel * 16 + i];
                 if (i == 15) st <= GO; else i <= i + 1;
             end
-            GO:  begin launch <= 1; st <= RUN; end
-            RUN: if (gpu_done && !launch) begin busy <= 0; finished <= 1; st <= IDLE; end
+            GO:  begin launch <= 1; i <= 0; st <= RUN; end
+            RUN: if (gpu_done && !launch) begin
+                if (anim) begin frame <= frame + 1; st <= NEXT; end           // next frame: only c[14], c[15] change
+                else begin busy <= 0; finished <= 1; st <= IDLE; end
+            end
+            NEXT: begin
+                cmem_we <= 1; cmem_addr <= i[0] ? 4'd15 : 4'd14; cmem_wdata <= i[0] ? frame : {21'd0, arg};
+                if (i[0]) begin i <= 0; st <= GO; end else i <= 1;
+            end
             default: st <= IDLE;
         endcase
     end

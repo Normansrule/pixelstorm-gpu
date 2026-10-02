@@ -52,7 +52,7 @@ module pixelstorm_tangnano20k (
                   .UART_DIV(219),
                   .PROG("fpga/gen/prog_imem.hex"), .CONS("fpga/gen/prog_cmem.hex"), .INFO("fpga/gen/prog_info.hex"),
                   .FONT("fpga/gen/font8x8.hex"), .NAMES("fpga/gen/prog_names.hex")) u_top (
-        .clk_gpu(clk_pix), .clk_pix(clk_pix), .rst(rst), .btn_start(I_s1), .sel(sel),
+        .clk_gpu(clk_pix), .clk_pix(clk_pix), .rst(rst), .btn_start(I_s1), .sel(sel), .anim(1'b0), .arg(11'd0),
         .vga_r(r), .vga_g(g), .vga_b(b), .vga_hs(hs), .vga_vs(vs), .vga_de(de),
         .led(led), .seg(), .an(), .uart_tx(O_uart_tx), .uart_rx(I_uart_rx));
     assign O_led = ~{led[5], 1'b0, led[14], led[15], sel};        // LEDs are active low

@@ -29,6 +29,8 @@ module ps_fpga_top #(
     input  wire        rst,
     input  wire        btn_start,
     input  wire [1:0]  sel,
+    input  wire        anim,               // re-run continuously, c[15] = frame number
+    input  wire [10:0] arg,                // live kernel argument, c[14]
     output wire [3:0]  vga_r, output wire [3:0] vga_g, output wire [3:0] vga_b,
     output wire        vga_hs, output wire vga_vs, output wire vga_de,
     output wire [15:0] led,
@@ -40,7 +42,7 @@ module ps_fpga_top #(
     // ---------------------------------------------------------------- GPU
     wire imem_we, cmem_we, host_we, launch, done, running;
     wire [IMEM_AW-1:0] imem_addr; wire [3:0] cmem_addr; wire [31:0] imem_wdata, cmem_wdata, host_addr, host_wdata;
-    wire [15:0] grid_dim, block_dim; wire [31:0] cycle;
+    wire [15:0] grid_dim, block_dim; wire [31:0] cycle; wire [31:0] p_instr, p_lanes, p_mem;
     wire m_req_valid; wire [1:0] m_req_op; wire [31:0] m_req_addr; wire [LW-1:0] m_req_wmask; wire [LW*32-1:0] m_req_wdata;
     wire m_resp_valid; wire [LW*32-1:0] m_resp_rdata;
     ps_gpu_top #(.NUM_SMS(NUM_SMS), .NUM_WARPS(NUM_WARPS), .WARP_SIZE(WARP_SIZE), .NUM_REGS(NUM_REGS), .LINE_WORDS(LW),
@@ -49,7 +51,7 @@ module ps_fpga_top #(
         .host_imem_we(imem_we), .host_imem_addr(imem_addr), .host_imem_wdata(imem_wdata),
         .host_cmem_we(cmem_we), .host_cmem_addr(cmem_addr), .host_cmem_wdata(cmem_wdata),
         .launch(launch), .grid_dim(grid_dim), .block_dim(block_dim),
-        .done(done), .running(running), .cycle(cycle),
+        .done(done), .running(running), .cycle(cycle), .perf_instr(p_instr), .perf_lanes(p_lanes), .perf_mem(p_mem),
         .mem_req_valid(m_req_valid), .mem_req_op(m_req_op), .mem_req_addr(m_req_addr),
         .mem_req_wmask(m_req_wmask), .mem_req_wdata(m_req_wdata),
         .mem_resp_valid(m_resp_valid), .mem_resp_rdata(m_resp_rdata));
@@ -74,7 +76,7 @@ module ps_fpga_top #(
         .mem_we(host_we), .mem_addr(host_addr), .mem_wdata(host_wdata),
         .launch(launch), .grid_dim(grid_dim), .block_dim(block_dim),
         .fb_addr(fb_addr), .fb_w(fb_w), .fb_h(fb_h), .kernel(kernel),
-        .gpu_done(done), .busy(lbusy), .finished(finished),
+        .gpu_done(done), .anim(anim), .arg(arg), .busy(lbusy), .finished(finished),
         .wclk(clk_pix), .u_we_i(u_we_i), .u_we_c(u_we_c), .u_we_f(u_we_f), .u_addr(u_addr), .u_data(u_data));
 
     // ---------------------------------------------------------------- memory + video
@@ -89,9 +91,20 @@ module ps_fpga_top #(
     // status into the pixel-clock domain (slow-changing signals, two-flop synchronizers)
     reg [1:0] s_run, s_fin; reg [31:0] cyc_q;
     always @(posedge clk_pix) begin s_run <= {s_run[0], lbusy}; s_fin <= {s_fin[0], finished}; end
-    always @(posedge clk_gpu) if (running) cyc_q <= cycle;
+    reg [31:0] q_instr, q_lanes, q_mem;
+    always @(posedge clk_gpu) if (running) begin cyc_q <= cycle; q_instr <= p_instr; q_lanes <= p_lanes; q_mem <= p_mem; end
+    // SIMD efficiency = lanes / (instructions x WARP_SIZE), in percent: a small sequential divider
+    reg [6:0] eff = 0; reg [6:0] eff_n; reg [39:0] num_r, den_r; reg [31:0] eff_src = 32'hFFFFFFFF; reg eff_busy = 0;
+    always @(posedge clk_pix) begin
+        if (!eff_busy && s_fin[1] && eff_src != q_lanes && q_instr != 0) begin
+            eff_src <= q_lanes; num_r <= q_lanes * 100; den_r <= q_instr * WARP_SIZE; eff_n <= 0; eff_busy <= 1;
+        end else if (eff_busy) begin
+            if (num_r >= den_r && eff_n < 100) begin num_r <= num_r - den_r; eff_n <= eff_n + 1'b1; end
+            else begin eff <= eff_n; eff_busy <= 0; end
+        end
+    end
     ps_vga #(.FONT(FONT), .NAMES(NAMES)) u_vga (.clk(clk_pix), .fb_addr(fb_addr), .fb_w(fb_w), .fb_h(fb_h), .running(s_run[1]), .done(s_fin[1]),
-                  .kernel(kernel), .cycles(s_fin[1] ? cyc_q : 32'd0),
+                  .kernel(kernel), .cycles(s_fin[1] ? cyc_q : 32'd0), .p_instr(q_instr), .p_mem(q_mem), .p_eff(eff),
                   .name_we(u_we_n), .name_waddr(u_addr[3:0]), .name_wdata(u_data[7:0]),
                   .maddr(vaddr), .mdata(vdata), .r(vga_r), .g(vga_g), .b(vga_b), .hs(vga_hs), .vs(vga_vs), .de(vga_de));
 
@@ -112,17 +125,26 @@ module ps_fpga_top #(
     end
 
     // ---------------------------------------------------------------- UART: "PIXELSTORM k=<n> cycles=<8 hex>\r\n"
-    reg [5:0] ci; reg sending; reg ustart; reg [7:0] uch; wire ubusy;
+    reg [6:0] ci; reg sending; reg ustart; reg [7:0] uch; wire ubusy;
     ps_uart_tx #(.DIV(UART_DIV)) u_tx (.clk(clk_pix), .rst(rst), .start(ustart), .data(uch), .tx(uart_tx), .busy(ubusy));
     function [7:0] hexc(input [3:0] v); hexc = v < 10 ? 8'h30 + v : 8'h37 + v; endfunction
-    function [7:0] msg(input [5:0] k);
+    function [7:0] msg(input [6:0] k);
         case (k)
             0: msg = "P"; 1: msg = "I"; 2: msg = "X"; 3: msg = "E"; 4: msg = "L"; 5: msg = "S"; 6: msg = "T"; 7: msg = "O"; 8: msg = "R"; 9: msg = "M";
             10: msg = " "; 11: msg = "k"; 12: msg = "="; 13: msg = 8'h30 + kernel; 14: msg = " ";
             15: msg = "c"; 16: msg = "y"; 17: msg = "c"; 18: msg = "l"; 19: msg = "e"; 20: msg = "s"; 21: msg = "=";
             22: msg = hexc(cyc_q[31:28]); 23: msg = hexc(cyc_q[27:24]); 24: msg = hexc(cyc_q[23:20]); 25: msg = hexc(cyc_q[19:16]);
             26: msg = hexc(cyc_q[15:12]); 27: msg = hexc(cyc_q[11:8]); 28: msg = hexc(cyc_q[7:4]); 29: msg = hexc(cyc_q[3:0]);
-            30: msg = 8'h0D; default: msg = 8'h0A;
+            30: msg = " "; 31: msg = "i"; 32: msg = "n"; 33: msg = "s"; 34: msg = "t"; 35: msg = "r"; 36: msg = "=";
+            37: msg = hexc(q_instr[31:28]); 38: msg = hexc(q_instr[27:24]); 39: msg = hexc(q_instr[23:20]); 40: msg = hexc(q_instr[19:16]);
+            41: msg = hexc(q_instr[15:12]); 42: msg = hexc(q_instr[11:8]); 43: msg = hexc(q_instr[7:4]); 44: msg = hexc(q_instr[3:0]);
+            45: msg = " "; 46: msg = "l"; 47: msg = "a"; 48: msg = "n"; 49: msg = "e"; 50: msg = "s"; 51: msg = "=";
+            52: msg = hexc(q_lanes[31:28]); 53: msg = hexc(q_lanes[27:24]); 54: msg = hexc(q_lanes[23:20]); 55: msg = hexc(q_lanes[19:16]);
+            56: msg = hexc(q_lanes[15:12]); 57: msg = hexc(q_lanes[11:8]); 58: msg = hexc(q_lanes[7:4]); 59: msg = hexc(q_lanes[3:0]);
+            60: msg = " "; 61: msg = "m"; 62: msg = "e"; 63: msg = "m"; 64: msg = "=";
+            65: msg = hexc(q_mem[31:28]); 66: msg = hexc(q_mem[27:24]); 67: msg = hexc(q_mem[23:20]); 68: msg = hexc(q_mem[19:16]);
+            69: msg = hexc(q_mem[15:12]); 70: msg = hexc(q_mem[11:8]); 71: msg = hexc(q_mem[7:4]); 72: msg = hexc(q_mem[3:0]);
+            73: msg = 8'h0D; default: msg = 8'h0A;
         endcase
     endfunction
     reg fin_d;
@@ -132,7 +154,7 @@ module ps_fpga_top #(
         else if (s_fin[1] && !fin_d) begin sending <= 1; ci <= 0; end
         else if (sending && !ubusy && !ustart) begin
             uch <= msg(ci); ustart <= 1;
-            if (ci == 31) sending <= 0; else ci <= ci + 1'b1;
+            if (ci == 74) sending <= 0; else ci <= ci + 1'b1;
         end
     end
 endmodule

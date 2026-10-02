@@ -19,6 +19,9 @@ module ps_vga #(
     input  wire        done,
     input  wire [1:0]  kernel,
     input  wire [31:0] cycles,
+    input  wire [31:0] p_instr,           // performance counters, shown on a second row when done
+    input  wire [31:0] p_mem,
+    input  wire [6:0]  p_eff,             // SIMD efficiency in percent
     input  wire        name_we,          // uploaded kernel's name -> slot 3
     input  wire [3:0]  name_waddr,
     input  wire [7:0]  name_wdata,
@@ -48,24 +51,42 @@ module ps_vga #(
     reg [7:0] names [0:63];
     initial begin $readmemh(FONT, font); $readmemh(NAMES, names); end
     always @(posedge clk) if (name_we) names[48 + name_waddr] <= name_wdata;
-    // cycles -> 10 decimal digits (double dabble, one bit per clock, restarts when the count changes)
-    reg [31:0] bin = 0, last = 32'hFFFFFFFF; reg [39:0] bcd = 0, dec = 0; reg [5:0] bitn = 0;
-    integer q;
-    always @(posedge clk) begin
-        if (cycles != last) begin last <= cycles; bin <= cycles; bcd <= 0; bitn <= 32; end
-        else if (bitn != 0) begin : dd
-            reg [39:0] t; t = bcd;
-            for (q = 0; q < 10; q = q + 1) if (t[q*4 +: 4] >= 5) t[q*4 +: 4] = t[q*4 +: 4] + 4'd3;
-            bcd <= {t[38:0], bin[31]}; bin <= {bin[30:0], 1'b0}; bitn <= bitn - 1'b1;
-            if (bitn == 1) dec <= {t[38:0], bin[31]};
-        end
-    end
-    localparam TY = 440, TX = 48;                        // text origin; 2x scale = 16 x 16 pixel cells
-    wire [9:0] tcol = (x - TX) >> 4, trow = (y - TY) >> 1;
-    wire       in_txt = (y >= TY) && (y < TY + 16) && (x >= TX) && (x < TX + 36 * 16);
+    wire [39:0] dec, d_instr, d_mem, d_eff;
+    ps_bin2bcd c0 (.clk(clk), .bin_in(cycles),  .dec(dec));
+    ps_bin2bcd c1 (.clk(clk), .bin_in(p_instr), .dec(d_instr));
+    ps_bin2bcd c2 (.clk(clk), .bin_in(p_mem),   .dec(d_mem));
+    ps_bin2bcd c3 (.clk(clk), .bin_in({25'd0, p_eff}), .dec(d_eff));
+    localparam TY = 436, TX = 48;                        // text origin; 2x scale = 16 x 16 pixel cells, two rows
+    wire       row2 = (y >= TY + 20);
+    wire [9:0] tcol = (x - TX) >> 4, trow = row2 ? (y - TY - 20) >> 1 : (y - TY) >> 1;
+    wire       in_txt = (((y >= TY) && (y < TY + 16)) || ((y >= TY + 20) && (y < TY + 36))) && (x >= TX) && (x < TX + 36 * 16);
     localparam [55:0] S_RUN = "RUNNING";
     localparam [87:0] S_PRESS = "PRESS START";
     localparam [55:0] S_CYC = " CYCLES";
+    localparam [47:0] S_INS = "INSTR ";
+    localparam [39:0] S_SIM = "SIMD ";
+    localparam [31:0] S_MEM = "MEM ";
+    // a decimal field: digit c of a right-aligned number ending at column 'e' (leading zeros blank)
+    function [7:0] num(input [39:0] d, input [5:0] c, input [5:0] e);
+        reg [3:0] dg;
+        begin
+            dg  = d[(e - c) * 4 +: 4];
+            num = (dg == 0 && (d >> ((e - c + 1) * 4)) == 0 && c != e) ? " " : 8'h30 + dg;
+        end
+    endfunction
+    // row 2: "INSTR 1234567  SIMD  73%  MEM 12345"   columns 0-5 label, 6-13 value, 16-20 label, 21-23 value, 24 %, 27-30 label, 31-35 value
+    function [7:0] ch2(input [5:0] c);
+        begin
+            ch2 = " ";
+            if (c < 6) ch2 = S_INS[8*(5 - c) +: 8];
+            else if (c <= 13) ch2 = num(d_instr, c, 13);
+            else if (c >= 16 && c <= 20) ch2 = S_SIM[8*(20 - c) +: 8];
+            else if (c >= 21 && c <= 23) ch2 = num(d_eff, c, 23);
+            else if (c == 24) ch2 = "%";
+            else if (c >= 27 && c <= 30) ch2 = S_MEM[8*(30 - c) +: 8];
+            else if (c >= 31 && c <= 35) ch2 = num(d_mem, c, 35);
+        end
+    endfunction
     // columns: 0-15 kernel name, 18-28 status (right-aligned cycle count in 18-27), 29-35 " CYCLES"
     function [7:0] ch(input [5:0] c);
         reg [3:0] dg; reg lead;
@@ -84,7 +105,7 @@ module ps_vga #(
             end else if (c >= 29 && c <= 35 && done && !running) ch = S_CYC[8*(35 - c) +: 8];
         end
     endfunction
-    wire [7:0] tc = ch(tcol[5:0]);
+    wire [7:0] tc = row2 ? ((done && !running) ? ch2(tcol[5:0]) : " ") : ch(tcol[5:0]);
     wire [7:0] glyph = font[{tc[5:0] - 6'd32, trow[2:0]}];
     wire       txt_px = in_txt && glyph[(x - TX) >> 1 & 3'd7];
 

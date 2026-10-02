@@ -105,6 +105,8 @@ feat = [
     'On-screen status line: kernel name and the cycle count in decimal (font ROM and hardware binary-to-decimal converter)',
     'Slow-motion GPU clock on the Digilent boards (1/64, 1/1024, 1/16384); cycle count on the 7-segment display and a UART status line on all boards',
     'Kernel upload over the USB serial port: run new kernels without a new bitstream (./pixelstorm upload)',
+    'Hardware performance counters (instructions, lane-operations, memory transactions) with SIMD efficiency on screen and on the serial line',
+    'Animation mode: re-launch every frame with the frame number and a live switch argument in the constant bank',
     'Fully open-source build for the Tang Nano 20K (Yosys, nextpnr-himbaechel, gowin_pack, openFPGALoader); Vivado scripts for the Artix-7 boards',
     'Same RTL as the simulated and SkyWater 130 nm versions; every kernel verified cycle for cycle against the golden model',
 ]
@@ -195,7 +197,8 @@ story.append(table([
     ['2', 'Choose a kernel with the two lowest switches', 'LED13..12 show the choice after start'],
     ['3', 'Optional: slow motion with the two highest switches', '10 = about 2 s for Mandelbrot'],
     ['4', 'Press the centre button', 'amber bar; image paints in; LED15 on'],
-    ['5', 'Wait for done', 'green bar; LED14 on; 7-segment shows cycles; UART prints a status line'],
+    ['5', 'Wait for done', 'green bar; LED14 on; 7-segment shows cycles; status rows show cycles, INSTR, SIMD and MEM; UART prints them'],
+    ['6', 'Optional: sw2 = 1 (animation), sw13..sw3 = live argument', 'the kernel re-runs every frame with c[15] = frame, c[14] = switches'],
 ], [0.5 * inch, 3.4 * inch, 2.9 * inch]))
 story.append(Paragraph('Kernel upload', H2))
 story.append(Paragraph('Slot 3 can be rewritten from the PC over the same serial port: <font face="Courier">./pixelstorm upload kernel.psa --port /dev/ttyUSB1</font>. The board launches the kernel as soon as the checksum matches; a bad packet is ignored and a pause of about 50 ms restarts the receiver.', P))
@@ -205,7 +208,7 @@ story.append(table([['Bytes', 'Field'], ['4', 'magic "PSK1"'], ['16', 'kernel na
 if ver.get('upload'):
     U = ver['upload']; story.append(Paragraph(f"Verified in simulation on the Basys 3 shape: {U['kernel']} uploaded at 115200 baud, {U.get('cycles') or 0:,} GPU cycles, {U['uart']}, pixels {U['result']}. {U.get('corrupt', '')}", SM))
 story.append(Paragraph('UART status line', H2))
-story.append(Paragraph('115200 baud, 8 data bits, no parity, 1 stop bit. After every kernel: <font face="Courier">PIXELSTORM k=&lt;slot&gt; cycles=&lt;8 hex digits&gt;</font> followed by CR LF. Open it with any terminal program (PuTTY, screen, minicom) on the board\'s USB serial port.', P))
+story.append(Paragraph('115200 baud, 8 data bits, no parity, 1 stop bit. After every kernel: <font face="Courier">PIXELSTORM k=&lt;slot&gt; cycles=&lt;hex&gt; instr=&lt;hex&gt; lanes=&lt;hex&gt; mem=&lt;hex&gt;</font> followed by CR LF: the cycle count and the three performance counters, eight hex digits each. Open it with any terminal program (PuTTY, screen, minicom) on the board\'s USB serial port.', P))
 story.append(Paragraph('Video timing', H2))
 story.append(table([['Parameter', 'Horizontal', 'Vertical'], ['Visible', '640 pixels', '480 lines'], ['Front porch / sync / back porch', '16 / 96 / 48', '10 / 2 / 33'], ['Total', '800 pixels', '525 lines'], ['Sync polarity', 'negative', 'negative'], ['Pixel clock', '25.0 MHz (VESA 25.175 MHz, accepted by monitors)', '59.5 Hz frame rate']], [2.2 * inch, 2.4 * inch, 2.2 * inch]))
 
@@ -221,6 +224,13 @@ if ver.get('runs_basys'):
     rows = [['Kernel', 'GPU cycles', 'UART line (simulated)', 'Pixels checked', 'Result']]
     for r in ver['runs_basys']: rows.append([r['name'], f"{r['cycles']:,}" if r['cycles'] else '-', r['uart'], f"{r['pixels']:,}", r['result']])
     story.append(table(rows, [1.3 * inch, 0.9 * inch, 2.6 * inch, 1.0 * inch, 1.0 * inch]))
+    story.append(Paragraph('Performance counters on the Basys 3 shape (board = golden model, exactly)', H2))
+    rows = [['Kernel', 'Warp instructions', 'Lane-operations', 'SIMD efficiency', 'Memory transactions']]
+    for r in ver['runs_basys']:
+        p = r.get('perf') or {}
+        rows.append([r['name'], f"{p.get('instr', 0):,}", f"{p.get('lanes', 0):,}", f"{p.get('simd', 0)}%", f"{p.get('mem', 0):,}"])
+    story.append(table(rows, [1.4 * inch, 1.3 * inch, 1.3 * inch, 1.2 * inch, 1.6 * inch]))
+    if ver.get('animation'): story.append(Paragraph(f"Animation: {ver['animation']['frames']} frames with switches = {ver['animation']['switches']}, final frame and counters equal the golden model run with c[15] = 2, c[14] = 100: {ver['animation']['result']}.", SM))
 if ver.get('runs_tang'):
     story.append(Paragraph('Same kernels on the Tang Nano 20K shape (16 warps x 2 lanes)', H2))
     rows = [['Kernel', 'GPU cycles', 'UART line (simulated)', 'Pixels checked', 'Result']]

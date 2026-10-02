@@ -48,6 +48,8 @@ module ps_sm #(
     input  wire [15:0]              blk_dim,
     input  wire [15:0]              grid_dim,
     output reg                      busy,
+    output wire                     perf_commit,     // one warp instruction retires this cycle
+    output wire [7:0]               perf_lanes,      // ...with this many lanes executing it
     output reg                      blk_done,
     // ---- instruction + constant memory (shared by all SMs) ----
     output wire [IMEM_AW-1:0]       imem_addr,
@@ -374,6 +376,13 @@ module ps_sm #(
 `endif
         end
     endgenerate
+
+    // ---- performance counters (read by ps_gpu_top) ---------------------------
+    assign perf_commit = !rst && state == S_WB;
+    function [7:0] lanes_on(input [WARP_SIZE-1:0] m);
+        integer q; begin lanes_on = 8'd0; for (q = 0; q < WARP_SIZE; q = q + 1) lanes_on = lanes_on + m[q]; end
+    endfunction
+    assign perf_lanes = lanes_on(cexe);
 
     // -------------------------------------------------------------------------
     // Trace switch (simulation only)

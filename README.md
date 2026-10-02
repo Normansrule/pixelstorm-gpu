@@ -75,7 +75,7 @@ The same Verilog on real hardware. **Reference test board: the [Digilent Basys 3
 
 | | |
 |---|---|
-| ![VGA output of the simulated board](docs/img/fpga-vga-all.png) | `make fpga-sim` simulates the whole board and checks every pixel on the captured VGA frame against the golden model.<br><br>`make fpga-bit` builds the Basys 3 bitstream with Vivado and `make fpga-prog` loads it. `./pixelstorm upload my_kernel.psa --port /dev/ttyUSB1` runs your own kernel on the board **without a new bitstream**.<br><br>Datasheet: [`fpga/docs/pixelstorm-fpga-datasheet.pdf`](fpga/docs/pixelstorm-fpga-datasheet.pdf). Chapter: [15. Pixelstorm on an FPGA](docs/15-fpga.md). |
+| ![VGA output of the simulated board](docs/img/fpga-vga-all.png) | `make fpga-sim` simulates the whole board and checks every pixel on the captured VGA frame against the golden model.<br><br>`make fpga-bit` builds the Basys 3 bitstream with Vivado and `make fpga-prog` loads it. `./pixelstorm upload my_kernel.psa --port /dev/ttyUSB1` runs your own kernel on the board **without a new bitstream**; the screen shows the GPU's own performance counters (instructions, SIMD efficiency, memory transactions), and sw2 turns on animation.<br><br>Datasheet: [`fpga/docs/pixelstorm-fpga-datasheet.pdf`](fpga/docs/pixelstorm-fpga-datasheet.pdf). Chapter: [15. Pixelstorm on an FPGA](docs/15-fpga.md). |
 
 ## The course
 

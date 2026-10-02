@@ -1,12 +1,24 @@
 {
- "version": "1.6",
+ "version": "1.7",
  "reference_board": "Digilent Basys 3",
+ "animation": {
+  "frames": 3,
+  "switches": 100,
+  "result": "PASS",
+  "detail": "perf counters: board instr=8704 lanes=34816 mem=256; model instr=8704 lanes=34816 mem=256; SIMD 100.0% MATCH"
+ },
  "runs_basys": [
   {
    "slot": 0,
    "name": "gradient_shader",
    "cycles": 28000,
    "uart": "PIXELSTORM k=0 cycles=00006D60",
+   "perf": {
+    "instr": 5120,
+    "lanes": 20480,
+    "mem": 256,
+    "simd": 100.0
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -15,6 +27,12 @@
    "name": "triangle_raster",
    "cycles": 61280,
    "uart": "PIXELSTORM k=1 cycles=0000EF60",
+   "perf": {
+    "instr": 11776,
+    "lanes": 46747,
+    "mem": 256,
+    "simd": 99.2
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -23,6 +41,12 @@
    "name": "mandelbrot",
    "cycles": 81660,
    "uart": "PIXELSTORM k=2 cycles=00013EFC",
+   "perf": {
+    "instr": 16092,
+    "lanes": 52382,
+    "mem": 128,
+    "simd": 81.4
+   },
    "pixels": 512,
    "result": "PASS"
   },
@@ -31,6 +55,12 @@
    "name": "mandelbrot_zoom",
    "cycles": 138885,
    "uart": "PIXELSTORM k=3 cycles=00021E85",
+   "perf": {
+    "instr": 27537,
+    "lanes": 84696,
+    "mem": 128,
+    "simd": 76.9
+   },
    "pixels": 512,
    "result": "PASS"
   }
@@ -41,6 +71,12 @@
    "name": "gradient_shader",
    "cycles": 15072,
    "uart": "PIXELSTORM k=0 cycles=00003AE0",
+   "perf": {
+    "instr": 2560,
+    "lanes": 20480,
+    "mem": 256,
+    "simd": 100.0
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -49,6 +85,12 @@
    "name": "triangle_raster",
    "cycles": 31712,
    "uart": "PIXELSTORM k=1 cycles=00007BE0",
+   "perf": {
+    "instr": 5888,
+    "lanes": 46747,
+    "mem": 256,
+    "simd": 99.2
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -57,6 +99,12 @@
    "name": "mandelbrot",
    "cycles": 46216,
    "uart": "PIXELSTORM k=2 cycles=0000B488",
+   "perf": {
+    "instr": 9016,
+    "lanes": 52382,
+    "mem": 128,
+    "simd": 72.6
+   },
    "pixels": 512,
    "result": "PASS"
   },
@@ -65,6 +113,12 @@
    "name": "mandelbrot_zoom",
    "cycles": 79461,
    "uart": "PIXELSTORM k=3 cycles=00013665",
+   "perf": {
+    "instr": 15665,
+    "lanes": 84696,
+    "mem": 128,
+    "simd": 67.6
+   },
    "pixels": 512,
    "result": "PASS"
   }
@@ -75,6 +129,12 @@
    "name": "gradient_shader",
    "cycles": 55904,
    "uart": "PIXELSTORM k=0 cycles=0000DA60",
+   "perf": {
+    "instr": 10240,
+    "lanes": 20480,
+    "mem": 512,
+    "simd": 100.0
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -83,6 +143,12 @@
    "name": "triangle_raster",
    "cycles": 122464,
    "uart": "PIXELSTORM k=1 cycles=0001DE60",
+   "perf": {
+    "instr": 23552,
+    "lanes": 46747,
+    "mem": 512,
+    "simd": 99.2
+   },
    "pixels": 1024,
    "result": "PASS"
   },
@@ -91,6 +157,12 @@
    "name": "mandelbrot",
    "cycles": 154252,
    "uart": "PIXELSTORM k=2 cycles=00025A8C",
+   "perf": {
+    "instr": 30380,
+    "lanes": 52382,
+    "mem": 256,
+    "simd": 86.2
+   },
    "pixels": 512,
    "result": "PASS"
   },
@@ -99,6 +171,12 @@
    "name": "mandelbrot_zoom",
    "cycles": 254127,
    "uart": "PIXELSTORM k=3 cycles=0003E0AF",
+   "perf": {
+    "instr": 50355,
+    "lanes": 84696,
+    "mem": 256,
+    "simd": 84.1
+   },
    "pixels": 512,
    "result": "PASS"
   }
@@ -106,8 +184,8 @@
  "tmds": "PASS: 24000 TMDS symbols decode exactly; running disparity stays within +/-8",
  "upload": {
   "kernel": "rings (fpga/kernels/rings.psa)",
-  "cycles": 38240,
-  "uart": "PIXELSTORM k=3 cycles=00009560",
+  "cycles": 45920,
+  "uart": "PIXELSTORM k=3 cycles=0000B360",
   "result": "PASS",
   "corrupt": "PASS: corrupted upload rejected (checksum error, nothing launched)"
  }

@@ -23,7 +23,7 @@ module pixelstorm_nexys_a7 (
     clocking_xc7 u_clk (.clk100(CLK100MHZ), .rst_in(~CPU_RESETN), .speed(SW[15:14]), .clk_pix(clk_pix), .clk_gpu(clk_gpu), .rst(rst));
     wire [6:0] seg; wire [3:0] an; wire de;
     ps_fpga_top #(.NUM_SMS(1), .NUM_WARPS(4), .WARP_SIZE(8), .NUM_REGS(16), .SMEM_WORDS(256), .SMEM_BANKS(8), .IMEM_AW(8)) u_top (
-        .clk_gpu(clk_gpu), .clk_pix(clk_pix), .rst(rst), .btn_start(BTNC), .sel(SW[1:0]),
+        .clk_gpu(clk_gpu), .clk_pix(clk_pix), .rst(rst), .btn_start(BTNC), .sel(SW[1:0]), .anim(SW[2]), .arg(SW[13:3]),
         .vga_r(VGA_R), .vga_g(VGA_G), .vga_b(VGA_B), .vga_hs(VGA_HS), .vga_vs(VGA_VS), .vga_de(de),
         .led(LED), .seg(seg), .an(an), .uart_tx(UART_RXD_OUT), .uart_rx(UART_TXD_IN));
     assign {CG, CF, CE, CD, CC, CB, CA} = seg;

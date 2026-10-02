@@ -44,6 +44,9 @@ module ps_gpu_top #(
     input  wire [15:0]              block_dim,
     output wire                     done,
     output wire                     running,
+    output reg  [31:0]              perf_instr,      // warp instructions retired since launch
+    output reg  [31:0]              perf_lanes,      // lane-operations (instructions x active lanes)
+    output reg  [31:0]              perf_mem,        // memory transactions granted by the arbiter
     output reg  [31:0]              cycle,
     // ---- global memory channel ----
     output wire                     mem_req_valid,
@@ -69,7 +72,8 @@ module ps_gpu_top #(
     end
 
     // ---- block dispatcher ------------------------------------------------------
-    wire [NUM_SMS-1:0] sm_busy, sm_start, sm_done;
+    wire [NUM_SMS-1:0] sm_busy, sm_start, sm_done, sm_commit;
+    wire [NUM_SMS*8-1:0] sm_lanes;
     wire [15:0]        blk_id, r_grid, r_block;
 
     ps_dispatcher #(.NUM_SMS(NUM_SMS)) u_disp (
@@ -99,7 +103,7 @@ module ps_gpu_top #(
             ) u_sm (
                 .clk(clk), .rst(rst), .cycle(cycle),
                 .blk_start(sm_start[s]), .blk_id(blk_id), .blk_dim(r_block), .grid_dim(r_grid),
-                .busy(sm_busy[s]), .blk_done(sm_done[s]),
+                .busy(sm_busy[s]), .blk_done(sm_done[s]), .perf_commit(sm_commit[s]), .perf_lanes(sm_lanes[s*8 +: 8]),
                 .imem_addr(ia), .imem_data(imem[ia]),
                 .cmem_addr(ca), .cmem_data(cmem[ca]),
                 .mreq_valid(req_valid[s]), .mreq_op(req_op[s*2 +: 2]), .mreq_addr(req_addr[s*32 +: 32]),
@@ -127,6 +131,18 @@ module ps_gpu_top #(
         .mem_req_wmask(a_req_wmask), .mem_req_wdata(a_req_wdata),
         .mem_resp_valid(a_resp_valid), .mem_resp_rdata(a_resp_rdata)
     );
+
+    // ---- performance counters: what a profiler such as Nsight Compute reports ----
+    integer pc_i; reg [31:0] add_i, add_l;
+    always @(posedge clk) begin
+        if (rst || launch) begin perf_instr <= 0; perf_lanes <= 0; perf_mem <= 0; end
+        else begin
+            add_i = 0; add_l = 0;
+            for (pc_i = 0; pc_i < NUM_SMS; pc_i = pc_i + 1) if (sm_commit[pc_i]) begin add_i = add_i + 1; add_l = add_l + sm_lanes[pc_i*8 +: 8]; end
+            perf_instr <= perf_instr + add_i; perf_lanes <= perf_lanes + add_l;
+            if (a_req_valid) perf_mem <= perf_mem + 1'b1;
+        end
+    end
 
     // ---- optional shared cache between the arbiter and DRAM --------------------
     generate

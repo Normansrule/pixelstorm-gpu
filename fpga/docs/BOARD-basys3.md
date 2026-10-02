@@ -31,6 +31,8 @@ A concise reference for running Pixelstorm on this board. For anything electrica
 | btnC | U18 | **start** the selected kernel |
 | sw1..sw0 | V16, V17 | kernel: 0 gradient, 1 triangle, 2 Mandelbrot, 3 Mandelbrot zoom |
 | sw15..sw14 | R2, T1 | GPU speed: full, 1/64, 1/1024, 1/16384 |
+| sw2 | W16 | animation: re-run continuously with `c[15]` = frame number |
+| sw13..sw3 | U1 W2 R3 T2 T3 V2 W13 W14 V15 W15 W17 | live argument in `c[14]` |
 | vgaRed/Green/Blue[3:0], Hsync, Vsync | G19 H19 J19 N19 / J17 H17 G17 D17 / N18 L18 K18 J18, P19, R19 | framebuffer |
 | seg[6:0], an[3:0] | W7 W6 U8 V8 U5 V5 U7, U2 U4 V4 W4 | cycle count (hex) |
 | led15, led14 | L1, P1 | busy, done |

@@ -110,6 +110,18 @@ The ROM holds four kernels, but slot 3 is also writable from the PC. `fpga/rtl/p
 
 `make fpga-sim` checks this too: it sends `rings.psa` bit by bit into the simulated board's serial pin at 115200 baud, checks every pixel of the result, and confirms that a packet with one flipped bit is rejected. This is the hardware version of what a GPU driver does every time a program calls a kernel: copy code and arguments to the device, then launch.
 
+## A profiler on the monitor
+
+`ps_gpu_top` now counts three things from launch to done: warp instructions retired, lane-operations (each instruction times the lanes that executed it), and memory transactions granted by the arbiter. The board divides them in hardware and prints them under the image:
+
+![Status rows: name, cycles, and the GPU's performance counters](img/fpga-vga-2.png)
+
+SIMD efficiency is lane-operations / (instructions x lanes per warp): 100% means every lane did useful work on every instruction. The gradient shader reaches 100%; the Mandelbrot set does not, because lanes that escape early sit idle while their warp's slowest lane keeps iterating (chapter 7). These are the counters NVIDIA's Nsight Compute reports as warp execution efficiency and memory transactions, and `make fpga-sim` checks every one against the golden model.
+
+## Animation and live arguments
+
+With sw2 on, the loader re-launches the kernel as soon as it finishes, writing the frame number into constant `c[15]` and the switches sw13..sw3 into `c[14]` before every run (the framebuffer is not cleared between frames, so there is no flicker). A kernel that reads them animates: `fpga/kernels/rings.psa` subtracts `2 x c[15]` from its distance so the rings flow outward, and adds `c[14]` to its green channel. This is the shape of every real-time graphics program: the same kernel, launched once per frame, with a few arguments changed.
+
 ## Further
 
 - **Real DDR memory.** Replace `ps_bram_mem` with a DDR2 controller (the Nexys A7 has 128 MiB); the GPU does not change, because it only sees the request/response port.

@@ -2,6 +2,8 @@
 ;     ./pixelstorm upload fpga/kernels/rings.psa --port /dev/ttyUSB1
 ; and the board runs it without a new bitstream. Concentric colour rings around
 ; the centre; argument c[1] is a phase: upload with --param 1=40 and they move.
+; On the Basys 3, sw2 = animation: the board re-runs it with c[15] = frame
+; number (the rings flow outward) and c[14] = switches sw13..sw3 (a colour tint).
 .kernel rings
 .grid 32
 .block 32
@@ -21,9 +23,15 @@
     ADD  R4, R4, R5            ; d = dx*dx + dy*dy
     LDC  R6, c[1]
     ADD  R4, R4, R6            ; + phase
+    LDC  R6, c[15]
+    SHLI R6, R6, 1
+    SUB  R4, R4, R6            ; - 2 x frame: rings flow outward
     SHLI R5, R4, 3
     ANDI R5, R5, 255           ; red: rings every 32 units of d
     SHLI R6, R1, 3             ; green = x * 8
+    LDC  R13, c[14]
+    ADD  R6, R6, R13           ; + tint from the switches
+    ANDI R6, R6, 255
     SHRI R7, R4, 1
     MOVI R8, 255
     SUB  R7, R8, R7

@@ -19,7 +19,7 @@ module pixelstorm_basys3 (
     wire clk_pix, clk_gpu, rst, de;
     clocking_xc7 u_clk (.clk100(clk), .rst_in(btnU), .speed(sw[15:14]), .clk_pix(clk_pix), .clk_gpu(clk_gpu), .rst(rst));
     ps_fpga_top #(.NUM_SMS(1), .NUM_WARPS(8), .WARP_SIZE(4), .NUM_REGS(16), .SMEM_WORDS(256), .SMEM_BANKS(4), .IMEM_AW(8)) u_top (
-        .clk_gpu(clk_gpu), .clk_pix(clk_pix), .rst(rst), .btn_start(btnC), .sel(sw[1:0]),
+        .clk_gpu(clk_gpu), .clk_pix(clk_pix), .rst(rst), .btn_start(btnC), .sel(sw[1:0]), .anim(sw[2]), .arg(sw[13:3]),
         .vga_r(vgaRed), .vga_g(vgaGreen), .vga_b(vgaBlue), .vga_hs(Hsync), .vga_vs(Vsync), .vga_de(de),
         .led(led), .seg(seg), .an(an), .uart_tx(RsTx), .uart_rx(RsRx));
     assign dp = 1'b1;

@@ -11,11 +11,11 @@
 module tb_fpga;
     parameter NW = 4, WS = 8, SB = 8;                    // GPU shape: -Ptb_fpga.NW=16 -Ptb_fpga.WS=2 -Ptb_fpga.SB=2 for the Tang Nano build
     reg clk = 0; always #20 clk = ~clk;                 // 25 MHz for both GPU and pixels
-    reg rst = 1, btn = 0; reg [1:0] sel = 0;
+    reg rst = 1, btn = 0; reg [1:0] sel = 0; reg anim = 0; reg [10:0] arg = 0; integer nframes = 0, runs = 0;
     wire [3:0] r, g, b; wire hs, vs, de; wire [15:0] led; wire [6:0] seg; wire [3:0] an; wire tx; reg rxl = 1'b1;
     ps_fpga_top #(.NUM_WARPS(NW), .WARP_SIZE(WS), .SMEM_BANKS(SB), .PROG("fpga/gen/prog_imem.hex"), .CONS("fpga/gen/prog_cmem.hex"), .INFO("fpga/gen/prog_info.hex"),
                   .FONT("fpga/gen/font8x8.hex"), .NAMES("fpga/gen/prog_names.hex")) dut (
-        .clk_gpu(clk), .clk_pix(clk), .rst(rst), .btn_start(btn), .sel(sel),
+        .clk_gpu(clk), .clk_pix(clk), .rst(rst), .btn_start(btn), .sel(sel), .anim(anim), .arg(arg),
         .vga_r(r), .vga_g(g), .vga_b(b), .vga_hs(hs), .vga_vs(vs), .vga_de(de), .led(led), .seg(seg), .an(an), .uart_tx(tx), .uart_rx(rxl));
     integer f, n, k; reg [1023:0] ppm, upf; integer s; reg [7:0] ubytes [0:4095]; integer ulen, ui, bi;
     // UART receiver: print what the board would send to the PC
@@ -29,6 +29,8 @@ module tb_fpga;
     initial begin
         if (!$value$plusargs("sel=%d", s)) s = 2; sel = s;
         if (!$value$plusargs("ppm=%s", ppm)) ppm = "frame.ppm";
+        if ($value$plusargs("anim=%d", nframes)) anim = 1;              // animation: run nframes frames, then stop
+        if (!$value$plusargs("arg=%d", ui)) ui = 0; arg = ui;
         repeat (10) @(posedge clk); rst = 0; repeat (10) @(posedge clk);
         if ($value$plusargs("upload=%s", upf)) begin                 // send a kernel over the UART instead of pressing start
             $readmemh(upf, ubytes); ulen = 0; while (ulen < 4096 && ubytes[ulen] !== 8'bx) ulen = ulen + 1;
@@ -45,6 +47,11 @@ module tb_fpga;
             end
         end else begin
             btn = 1; repeat (4) @(posedge clk); btn = 0;
+        end
+        if (anim) begin
+            while (runs < nframes) begin @(posedge dut.done); runs = runs + 1; end
+            anim = 0;                                      // the loader sees this before it would start frame nframes
+            $display("[tb_fpga] animation: %0d frames, stopping", runs);
         end
         wait (led[14] == 1'b1);                           // kernel finished
         $display("[tb_fpga] kernel %0d finished after %0d GPU cycles", dut.kernel, dut.cyc_q);

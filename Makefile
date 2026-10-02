@@ -89,11 +89,13 @@ fpga-sim: fpga-gen      ## simulate the boards: every kernel on all three GPU sh
 	  iverilog -g2012 -I rtl -Ptb_fpga.NW=$$nw -Ptb_fpga.WS=$$ws -Ptb_fpga.SB=$$sb -o build/fpga/tb_$$b.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v || exit 1; \
 	  for s in 0 1 2 3; do \
 	    vvp -n build/fpga/tb_$$b.vvp +sel=$$s +ppm=build/fpga/$$b-$$s.ppm > build/fpga/$$b-$$s.log; \
-	    node fpga/sim/check.js $$s build/fpga/$$b-$$s.ppm $$nw $$ws | sed "s/^/$$b: /" || exit 1; \
+	    node fpga/sim/check.js $$s build/fpga/$$b-$$s.ppm $$nw $$ws log=build/fpga/$$b-$$s.log | sed "s/^/$$b: /" || exit 1; \
 	    grep -a "PIXELSTORM" build/fpga/$$b-$$s.log | tr -d '\r' | sed "s/^/$$b: /"; done; done
 	node tools/pixelstorm.js upload fpga/kernels/rings.psa --hex build/fpga/rings.hex > /dev/null
 	vvp -n build/fpga/tb_basys3.vvp +upload=build/fpga/rings.hex +ppm=build/fpga/upload.ppm > build/fpga/upload.log
-	node fpga/sim/check.js k:fpga/kernels/rings.psa build/fpga/upload.ppm 8 4 | sed 's/^/basys3 upload: /'
+	node fpga/sim/check.js k:fpga/kernels/rings.psa build/fpga/upload.ppm 8 4 log=build/fpga/upload.log | sed 's/^/basys3 upload: /'
+	vvp -n build/fpga/tb_basys3.vvp +upload=build/fpga/rings.hex +anim=3 +arg=100 +ppm=build/fpga/anim.ppm > build/fpga/anim.log
+	node fpga/sim/check.js k:fpga/kernels/rings.psa build/fpga/anim.ppm 8 4 p14=100 p15=2 log=build/fpga/anim.log | sed 's/^/basys3 animation (3 frames, switches=100): /'
 	vvp -n build/fpga/tb_basys3.vvp +upload=build/fpga/rings.hex +corrupt | grep -E "PASS|FAIL" | tee build/fpga/corrupt.log
 	@grep -q PASS build/fpga/corrupt.log
 	python3 fpga/sim/ppm2png.py
