@@ -6,7 +6,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ims = []
 for s in range(4):
-    p = os.path.join(ROOT, 'build', 'fpga', f'frame{s}.ppm')
+    p = os.path.join(ROOT, 'build', 'fpga', f'basys3-{s}.ppm')
     if not os.path.exists(p): continue
     tok = open(p).read().split(); w, h = int(tok[1]), int(tok[2]); v = list(map(int, tok[4:]))
     im = Image.frombytes('RGB', (w, h), bytes(min(255, x * 17) for x in v))
@@ -15,4 +15,8 @@ if len(ims) == 4:
     sheet = Image.new('RGB', (1280, 960), (5, 7, 11))
     for i, im in enumerate(ims): sheet.paste(im, ((i % 2) * 640, (i // 2) * 480))
     sheet.save(os.path.join(ROOT, 'docs', 'img', 'fpga-vga-all.png'), optimize=True)
-print(f'fpga: {len(ims)} VGA frames -> docs/img/fpga-vga-*.png')
+up = os.path.join(ROOT, 'build', 'fpga', 'upload.ppm')
+if os.path.exists(up):
+    tok = open(up).read().split(); v = list(map(int, tok[4:]))
+    Image.frombytes('RGB', (640, 480), bytes(min(255, x * 17) for x in v)).save(os.path.join(ROOT, 'docs', 'img', 'fpga-upload-rings.png'), optimize=True)
+print(f'fpga: {len(ims)} Basys 3 VGA frames -> docs/img/fpga-vga-*.png')

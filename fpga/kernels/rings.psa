@@ -1,0 +1,41 @@
+; rings — a kernel that is NOT in the FPGA's ROM: send it with
+;     ./pixelstorm upload fpga/kernels/rings.psa --port /dev/ttyUSB1
+; and the board runs it without a new bitstream. Concentric colour rings around
+; the centre; argument c[1] is a phase: upload with --param 1=40 and they move.
+.kernel rings
+.grid 32
+.block 32
+.equ W, 32
+.equ H, 32
+.equ FB, 0x1000
+.param 0, FB
+.param 1, 0                    ; phase
+.fb FB, W, H
+    S2R  R0, CTAID             ; y
+    S2R  R1, TID               ; x
+    MOVI R9, 16
+    SUB  R2, R1, R9            ; dx = x - 16
+    SUB  R3, R0, R9            ; dy = y - 16
+    MUL  R4, R2, R2
+    MUL  R5, R3, R3
+    ADD  R4, R4, R5            ; d = dx*dx + dy*dy
+    LDC  R6, c[1]
+    ADD  R4, R4, R6            ; + phase
+    SHLI R5, R4, 3
+    ANDI R5, R5, 255           ; red: rings every 32 units of d
+    SHLI R6, R1, 3             ; green = x * 8
+    SHRI R7, R4, 1
+    MOVI R8, 255
+    SUB  R7, R8, R7
+    MOVI R10, 0
+    MAX  R7, R7, R10           ; blue fades outward
+    SHLI R5, R5, 16
+    SHLI R6, R6, 8
+    OR   R5, R5, R6
+    OR   R5, R5, R7
+    SHLI R11, R0, 5
+    ADD  R11, R11, R1          ; pixel index
+    LDC  R12, c[0]
+    ADD  R12, R12, R11
+    STG  [R12], R5
+    EXIT

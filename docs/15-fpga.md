@@ -16,7 +16,7 @@
 
 A field-programmable gate array (FPGA) is a chip full of small lookup tables (LUTs), flip-flops, block RAMs and multipliers that you can wire into any circuit by loading a configuration file, the **bitstream**. Loading Pixelstorm's Verilog into one turns a board costing as little as **about $30** into a real, working GPU: press a button, and a monitor shows the image appearing as the warps compute it, with the kernel name and its cycle count written underneath.
 
-**Which board?** See [fpga/docs/BUYING.md](../fpga/docs/BUYING.md). In short: the **Sipeed Tang Nano 20K** (about $30 on Amazon, HDMI, fully open-source tools) for anyone; the **Digilent Basys 3** for labs that use Vivado; the **Nexys A7-100T** for the full-width GPU.
+**The reference test board is the [Digilent Basys 3](https://www.amazon.com/dp/B00NUE1WOG)**: every release is simulated on its exact GPU shape, and [the Basys 3 quick start](../fpga/docs/BASYS3-QUICKSTART.md) walks from the box to a running GPU, listing what you should see at each step. Also supported: the **Sipeed Tang Nano 20K** (about $30, HDMI, open-source tools) and the **Nexys A7-100T** (full-width GPU). See [fpga/docs/BUYING.md](../fpga/docs/BUYING.md).
 
 Everything for this lives in `fpga/`, and the datasheet is `fpga/docs/pixelstorm-fpga-datasheet.pdf`.
 
@@ -59,7 +59,7 @@ Each lane's bank is now a handful of RAM64M primitives: small multi-port memorie
 | Core LUTs (estimate) | reported by `make fpga-tang` (see below) | 15,032 of 20,800 (72%) | 30,508 of 63,400 (48%) |
 | Video | HDMI | VGA | VGA |
 | Tools | open source (OSS CAD Suite) | Vivado ML Standard | Vivado ML Standard |
-| Mandelbrot | 154,252 cycles (6.1 ms) | 81,661 cycles (3.3 ms) | 46,216 cycles (1.8 ms) |
+| Mandelbrot | 154,252 cycles (6.1 ms) | 81,660 cycles (3.3 ms) | 46,216 cycles (1.8 ms) |
 | Board reference | [BOARD-tangnano20k.md](../fpga/docs/BOARD-tangnano20k.md) | [BOARD-basys3.md](../fpga/docs/BOARD-basys3.md) | [BOARD-nexys-a7.md](../fpga/docs/BOARD-nexys-a7.md) |
 
 All three builds keep 32-thread blocks, so every demo kernel runs unchanged; fewer lanes simply means more warps take turns, which is the SIMT trade-off from chapter 2 made visible: the 2-lane GPU does the same work in about 3.3 times the cycles. The estimates come from Yosys (`synth_xilinx`); Vivado's own `utilization.rpt` after `make fpga-bit` is authoritative.
@@ -96,6 +96,19 @@ make fpga-prog BOARD=nexys_a7         # load it over USB with openFPGALoader
 ```
 
 Then plug in a VGA monitor, choose a kernel with the two lowest switches, press the centre button, and open the board's USB serial port at 115200 baud to read the status line. Read `build/fpga/<board>/timing.rpt` first: a negative slack means the GPU cannot run at 25 MHz as built, and chapter 12's pipelining exercise is the fix.
+
+## Run your own kernels: upload over USB
+
+The ROM holds four kernels, but slot 3 is also writable from the PC. `fpga/rtl/ps_uploader.v` listens on the board's serial port for a packet: the magic `PSK1`, a 16-character name, the launch shape, up to 256 instructions, 16 kernel arguments and a checksum. When the checksum matches it writes everything into slot 3, puts the name on the status line, and launches; a corrupted packet is ignored.
+
+```bash
+./pixelstorm upload fpga/kernels/rings.psa --port /dev/ttyUSB1          # a new program, no new bitstream
+./pixelstorm upload fpga/kernels/rings.psa --param 1=40 --port /dev/ttyUSB1   # same program, new argument
+```
+
+![A kernel uploaded over the simulated serial port](img/fpga-upload-rings.png)
+
+`make fpga-sim` checks this too: it sends `rings.psa` bit by bit into the simulated board's serial pin at 115200 baud, checks every pixel of the result, and confirms that a packet with one flipped bit is rejected. This is the hardware version of what a GPU driver does every time a program calls a kernel: copy code and arguments to the device, then launch.
 
 ## Further
 

@@ -36,6 +36,11 @@ module ps_loader #(
     output reg [7:0]           fb_h,
     output reg [1:0]           kernel,
     input  wire                gpu_done,
+    // upload port (pixel clock): overwrites ROM slot 3 with a kernel received over the UART
+    input  wire                wclk,
+    input  wire                u_we_i, input wire u_we_c, input wire u_we_f,
+    input  wire [IMEM_AW-1:0]  u_addr,
+    input  wire [31:0]         u_data,
     output reg                 busy,
     output reg                 finished
 );
@@ -44,6 +49,11 @@ module ps_loader #(
     reg [31:0] cons [0:NK*16-1];
     reg [31:0] info [0:NK*4-1];          // grid, block, fb address, (fb_w << 8) | fb_h
     initial begin $readmemh(PROG, prog); $readmemh(CONS, cons); $readmemh(INFO, info); end
+    always @(posedge wclk) begin
+        if (u_we_i) prog[3 * N_I + u_addr] <= u_data;
+        if (u_we_c) cons[3 * 16 + u_addr[3:0]] <= u_data;
+        if (u_we_f) info[3 * 4 + u_addr[1:0]] <= u_data;
+    end
 
     localparam IDLE = 0, CLEAR = 1, LOADI = 2, LOADC = 3, GO = 4, RUN = 5;
     reg [2:0]  st;

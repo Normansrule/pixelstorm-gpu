@@ -8,8 +8,15 @@ const fs = require('fs'), path = require('path');
 const W = require('../../web/js/pixelstorm.js');
 const slot = +process.argv[2], ppm = process.argv[3];
 const NW = +(process.argv[4] || 4), WS = +(process.argv[5] || 8);          // GPU shape of the build under test
-const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'gen', 'slots.json'), 'utf8'))[slot];
-const src = fs.readFileSync(path.join(__dirname, '..', '..', 'kernels', S.file), 'utf8');
+// a ROM slot number, or k:<kernel.psa> for a kernel sent with ./pixelstorm upload
+let S, src;
+if (String(process.argv[2]).startsWith('k:')) {
+  src = fs.readFileSync(process.argv[2].slice(2), 'utf8'); const a0 = W.assemble(src);
+  S = { name: a0.config.name, grid: a0.config.grid, block: a0.config.block, fb: a0.config.fb, params: a0.config.params.slice(0, 16) };
+} else {
+  S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'gen', 'slots.json'), 'utf8'))[slot];
+  src = fs.readFileSync(path.join(__dirname, '..', '..', 'kernels', S.file), 'utf8');
+}
 const a = W.assemble(src);
 const sim = new W.Simulator(Object.assign({}, W.DEFAULT_CFG, { numSms: 1, numWarps: NW, warpSize: WS }));
 sim.load(a.words, S.params, a.config.data);

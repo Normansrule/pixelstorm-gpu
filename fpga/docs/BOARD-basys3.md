@@ -1,4 +1,6 @@
-# Board reference: Digilent Basys 3
+# Board reference: Digilent Basys 3 (Pixelstorm's reference test board)
+
+Buy: <https://www.amazon.com/dp/B00NUE1WOG>. Step-by-step bring-up: [BASYS3-QUICKSTART.md](BASYS3-QUICKSTART.md).
 
 A concise reference for running Pixelstorm on this board. For anything electrical, **the official documents are authoritative**:
 
@@ -33,5 +35,7 @@ A concise reference for running Pixelstorm on this board. For anything electrica
 | seg[6:0], an[3:0] | W7 W6 U8 V8 U5 V5 U7, U2 U4 V4 W4 | cycle count (hex) |
 | led15, led14 | L1, P1 | busy, done |
 | RsTx | A18 | status line at 115200 8N1 |
+| RsRx | B18 | kernel upload from the PC (`./pixelstorm upload`) |
+| led11 | U3 | last upload received with a good checksum |
 
 The Basys 3 build uses a leaner GPU (1 SM, 8 warps × 4 lanes, 4 shared-memory banks) so it fits the smaller FPGA; every demo kernel still runs unchanged because blocks are still 32 threads.

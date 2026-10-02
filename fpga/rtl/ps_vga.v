@@ -19,6 +19,9 @@ module ps_vga #(
     input  wire        done,
     input  wire [1:0]  kernel,
     input  wire [31:0] cycles,
+    input  wire        name_we,          // uploaded kernel's name -> slot 3
+    input  wire [3:0]  name_waddr,
+    input  wire [7:0]  name_wdata,
     output reg  [31:0] maddr,             // to ps_bram_mem video port (1-cycle latency)
     input  wire [31:0] mdata,
     output reg  [3:0]  r, output reg [3:0] g, output reg [3:0] b,
@@ -44,6 +47,7 @@ module ps_vga #(
     reg [7:0] font  [0:511];
     reg [7:0] names [0:63];
     initial begin $readmemh(FONT, font); $readmemh(NAMES, names); end
+    always @(posedge clk) if (name_we) names[48 + name_waddr] <= name_wdata;
     // cycles -> 10 decimal digits (double dabble, one bit per clock, restarts when the count changes)
     reg [31:0] bin = 0, last = 32'hFFFFFFFF; reg [39:0] bcd = 0, dec = 0; reg [5:0] bitn = 0;
     integer q;

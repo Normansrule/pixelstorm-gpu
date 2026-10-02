@@ -18,6 +18,7 @@ module pixelstorm_tangnano20k (
     input  wire       I_s2,            // next kernel
     output wire [5:0] O_led,
     output wire       O_uart_tx,
+    input  wire       I_uart_rx,
     output wire       O_tmds_clk_p, output wire O_tmds_clk_n,
     output wire [2:0] O_tmds_data_p, output wire [2:0] O_tmds_data_n
 );
@@ -53,7 +54,7 @@ module pixelstorm_tangnano20k (
                   .FONT("fpga/gen/font8x8.hex"), .NAMES("fpga/gen/prog_names.hex")) u_top (
         .clk_gpu(clk_pix), .clk_pix(clk_pix), .rst(rst), .btn_start(I_s1), .sel(sel),
         .vga_r(r), .vga_g(g), .vga_b(b), .vga_hs(hs), .vga_vs(vs), .vga_de(de),
-        .led(led), .seg(), .an(), .uart_tx(O_uart_tx));
+        .led(led), .seg(), .an(), .uart_tx(O_uart_tx), .uart_rx(I_uart_rx));
     assign O_led = ~{led[5], 1'b0, led[14], led[15], sel};        // LEDs are active low
 
     // ---------------------------------------------------------------- DVI: TMDS encode, serialize, LVDS out

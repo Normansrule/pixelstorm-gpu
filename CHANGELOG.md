@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.6.0
+- **Reference test board: Digilent Basys 3** (amazon.com/dp/B00NUE1WOG). Its exact GPU shape (8 warps x 4 lanes) is now simulated on every run, builds default to it (`make fpga-bit`, `make fpga-prog`), and `fpga/docs/BASYS3-QUICKSTART.md` takes it from the box to a running GPU with the readings you should see.
+- **Kernel upload over USB serial.** `./pixelstorm upload K --port ...` sends any kernel (up to 256 instructions, with its arguments) to the board, which stores it in slot 3, shows its name and runs it: no new bitstream. New `ps_uart_rx.v` and `ps_uploader.v` (checksummed packet, timeout resync); works on all three boards (Basys 3 RsRx B18, Nexys A7 C4, Tang Nano pin 70).
+- New demo kernel `fpga/kernels/rings.psa` (not in ROM), uploaded and pixel-checked in simulation; a corrupted upload is verified to be rejected.
+- `make fpga-sim` covers all three GPU shapes (12 board runs), the upload and the TMDS encoder; LED11 shows a good upload.
+
 ## v1.5.0
 - **Tang Nano 20K (about $30 on Amazon).** New board: Sipeed Tang Nano 20K (Gowin GW2AR-18) with a 16-warp x 2-lane GPU, **HDMI output**, two-button control and a fully open-source build (`make fpga-tang`: Yosys, nextpnr-himbaechel, gowin_pack, openFPGALoader). Pins from Sipeed's official examples.
 - **TMDS encoder** (`fpga/rtl/ps_tmds_enc.v`) for DVI/HDMI, verified symbol by symbol against a reference decoder.

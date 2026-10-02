@@ -244,7 +244,45 @@ function cmdIsaMd() {
 
 // ---------------------------------------------------------------------------
 const opts = parseArgs(process.argv.slice(2));
-const cmds = { asm: cmdAsm, sim: cmdSim, rtl: cmdRtl, test: cmdTest, traces: cmdTraces, bundle: cmdBundle, 'isa-md': cmdIsaMd };
+
+// ---------------------------------------------------------------------------
+// upload: send a kernel to a Pixelstorm FPGA board over its USB serial port
+// (protocol in fpga/rtl/ps_uploader.v). The board stores it in ROM slot 3 and
+// runs it at once, so new kernels need no new bitstream.
+// ---------------------------------------------------------------------------
+function uploadPacket(src, overrides) {
+  const a = W.assemble(src);
+  if (!a.config.fb) throw new Error('upload: the kernel needs a .fb framebuffer so the board can show it');
+  if (a.words.length > 256) throw new Error(`upload: ${a.words.length} instructions, the board holds 256`);
+  if (a.config.block > 32) throw new Error('upload: blocks of at most 32 threads (the FPGA builds have 32 threads per SM)');
+  const params = a.config.params.slice(0, 16); while (params.length < 16) params.push(0);
+  for (const [k, v] of Object.entries(overrides)) params[+k] = v | 0;
+  const name = (a.config.name || 'kernel').toUpperCase().replace(/[^ -_]/g, ' ').padEnd(16).slice(0, 16);
+  const b = [];
+  const u8 = (v) => b.push(v & 255), u16 = (v) => { u8(v); u8(v >> 8); }, u32 = (v) => { u16(v); u16(v >>> 16); };
+  for (const ch of 'PSK1' + name) u8(ch.charCodeAt(0));
+  u16(a.config.grid); u16(a.config.block); u16(a.config.fb.addr); u8(a.config.fb.width); u8(a.config.fb.height);
+  u16(a.words.length); for (const w of a.words) u32(w); for (const p of params) u32(p);
+  u8(b.slice(4).reduce((x, y) => x + y, 0));
+  return { bytes: Buffer.from(b), asm: a, params, name };
+}
+function cmdUpload(opts) {
+  const k = readKernel(opts._[1]); const src = typeof k === 'string' ? k : k.src;
+  const over = {};
+  if (typeof opts.param === 'string') for (const kv of opts.param.split(',')) { const [i, v] = kv.split('='); over[+i] = Number(v); }
+  const { bytes, asm, name } = uploadPacket(src, over);
+  console.log(`upload: ${name.trim()}  ${asm.words.length} instructions  <<<${asm.config.grid}, ${asm.config.block}>>>  ${bytes.length} bytes`);
+  if (opts.out) { fs.writeFileSync(opts.out, bytes); console.log(`wrote ${opts.out}`); }
+  if (opts.hex) { fs.writeFileSync(opts.hex, [...bytes].map(v => v.toString(16).padStart(2, '0')).join('\n') + '\n'); console.log(`wrote ${opts.hex}`); }
+  if (opts.port) {
+    if (process.platform !== 'win32') require('child_process').execSync(`stty -F ${opts.port} 115200 cs8 -cstopb -parenb raw -echo`);
+    fs.writeFileSync(opts.port, bytes);
+    console.log(`sent to ${opts.port}: the board should show ${name.trim()} and print PIXELSTORM k=3 cycles=...`);
+  }
+  if (!opts.out && !opts.hex && !opts.port) console.log('nothing sent: add --port /dev/ttyUSB1 (Linux/WSL), or --out kernel.bin to send it with another tool');
+}
+
+const cmds = { upload: cmdUpload, asm: cmdAsm, sim: cmdSim, rtl: cmdRtl, test: cmdTest, traces: cmdTraces, bundle: cmdBundle, 'isa-md': cmdIsaMd };
 const HELP = `
 ${color.b}Pixelstorm${color.x} — a see-through GPU in Verilog
 
@@ -270,6 +308,7 @@ ${color.y}Check and publish${color.x}
 ${color.y}Options${color.x}
   --sms N     number of Streaming Multiprocessors (default 2)
   --lat N     DRAM latency in cycles (default 8)
+  upload K    send kernel K to an FPGA board over USB serial: --port /dev/ttyUSB1, --out file.bin, --param 1=40
   --cache N   add a shared N-line cache between the arbiter and DRAM (power of two, 0 = none)
   --trace F   write the trace JSON to F
   --quiet     less output

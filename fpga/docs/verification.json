@@ -1,5 +1,40 @@
 {
- "version": "1.5",
+ "version": "1.6",
+ "reference_board": "Digilent Basys 3",
+ "runs_basys": [
+  {
+   "slot": 0,
+   "name": "gradient_shader",
+   "cycles": 28000,
+   "uart": "PIXELSTORM k=0 cycles=00006D60",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 1,
+   "name": "triangle_raster",
+   "cycles": 61280,
+   "uart": "PIXELSTORM k=1 cycles=0000EF60",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 2,
+   "name": "mandelbrot",
+   "cycles": 81660,
+   "uart": "PIXELSTORM k=2 cycles=00013EFC",
+   "pixels": 512,
+   "result": "PASS"
+  },
+  {
+   "slot": 3,
+   "name": "mandelbrot_zoom",
+   "cycles": 138885,
+   "uart": "PIXELSTORM k=3 cycles=00021E85",
+   "pixels": 512,
+   "result": "PASS"
+  }
+ ],
  "runs": [
   {
    "slot": 0,
@@ -68,5 +103,12 @@
    "result": "PASS"
   }
  ],
- "tmds": "PASS: 24000 TMDS symbols decode exactly; running disparity stays within +/-8"
+ "tmds": "PASS: 24000 TMDS symbols decode exactly; running disparity stays within +/-8",
+ "upload": {
+  "kernel": "rings (fpga/kernels/rings.psa)",
+  "cycles": 38240,
+  "uart": "PIXELSTORM k=3 cycles=00009560",
+  "result": "PASS",
+  "corrupt": "PASS: corrupted upload rejected (checksum error, nothing launched)"
+ }
 }

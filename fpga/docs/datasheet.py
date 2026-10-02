@@ -93,7 +93,7 @@ def header_footer(canvas, doc):
 
 story = []
 story.append(Paragraph('Pixelstorm-F: an open-source SIMT GPU for FPGA boards from $30', ParagraphStyle('t', parent=H1, fontSize=18, spaceBefore=6)))
-story.append(Paragraph('Verilog GPU with a CUDA-style instruction set, block-RAM global memory, live VGA or HDMI framebuffer with an on-screen status line, and an on-board kernel loader. Runs on the Sipeed Tang Nano 20K (Gowin GW2AR-18, open-source tools), the Digilent Basys 3 and the Nexys A7-100T. Verified pixel for pixel against a cycle-exact golden model.', P))
+story.append(Paragraph('<b>Reference test board: Digilent Basys 3</b> (amazon.com/dp/B00NUE1WOG). Verilog GPU with a CUDA-style instruction set, block-RAM global memory, live VGA or HDMI framebuffer with an on-screen status line, and an on-board kernel loader. Runs on the Sipeed Tang Nano 20K (Gowin GW2AR-18, open-source tools), the Digilent Basys 3 and the Nexys A7-100T. Verified pixel for pixel against a cycle-exact golden model.', P))
 story.append(Spacer(1, 6))
 feat = [
     'SIMT GPU core: 1 Streaming Multiprocessor with 32-thread blocks as 4 warps x 8 lanes (Nexys A7), 8 x 4 (Basys 3) or 16 x 2 (Tang Nano 20K)',
@@ -104,6 +104,7 @@ feat = [
     '640 x 480 @ 60 Hz video drawing the framebuffer live, 12x magnified: VGA (Digilent boards) or HDMI/DVI with an in-house TMDS encoder (Tang Nano 20K)',
     'On-screen status line: kernel name and the cycle count in decimal (font ROM and hardware binary-to-decimal converter)',
     'Slow-motion GPU clock on the Digilent boards (1/64, 1/1024, 1/16384); cycle count on the 7-segment display and a UART status line on all boards',
+    'Kernel upload over the USB serial port: run new kernels without a new bitstream (./pixelstorm upload)',
     'Fully open-source build for the Tang Nano 20K (Yosys, nextpnr-himbaechel, gowin_pack, openFPGALoader); Vivado scripts for the Artix-7 boards',
     'Same RTL as the simulated and SkyWater 130 nm versions; every kernel verified cycle for cycle against the golden model',
 ]
@@ -152,22 +153,22 @@ if res.get('tang_note'): story.append(Paragraph(res['tang_note'], SM))
 story.append(Paragraph('Memory map (global memory, word addresses)', H2))
 story.append(table([['Range', 'Contents'], ['0x0000 - 0x0FFF', 'free for kernel data'], ['0x1000 - 0x13FF', 'framebuffer, one 0x00RRGGBB word per pixel (32 x 32 or 32 x 16)'], ['0x1400 - 0x1FFF', 'free']], [1.6 * inch, 5.2 * inch]))
 story.append(Paragraph('Kernel ROM', H2))
-rows = [['Slot', 'Kernel', 'Instructions', 'Launch', 'Framebuffer', 'Cycles, 4 x 8', 'Cycles, 16 x 2 (Tang Nano)']]
+rows = [['Slot', 'Kernel', 'Instr.', 'Launch', 'Basys 3 (8 x 4)', 'Nexys A7 (4 x 8)', 'Tang Nano (16 x 2)']]
 for s in slots:
-    v = next((x for x in ver['runs'] if x['slot'] == s['slot']), {}); t = next((x for x in ver.get('runs_tang', []) if x['slot'] == s['slot']), {})
-    cyc, cyt = v.get('cycles'), t.get('cycles')
-    rows.append([s['slot'], s['name'], s['instructions'], f"<<<{s['grid']}, {s['block']}>>>", f"{s['fb']['width']} x {s['fb']['height']}",
-                 f'{cyc:,} ({cyc / 25e3:.2f} ms)' if cyc else '-', f'{cyt:,} ({cyt / 25.2e3:.2f} ms)' if cyt else '-'])
-story.append(table(rows, [0.45 * inch, 1.2 * inch, 0.8 * inch, 0.95 * inch, 0.85 * inch, 1.25 * inch, 1.3 * inch]))
+    cy = lambda key: next((x.get('cycles') for x in ver.get(key, []) if x['slot'] == s['slot']), None)
+    fmt = lambda c, mhz: f'{c:,} ({c / (mhz * 1e3):.2f} ms)' if c else '-'
+    rows.append([s['slot'], s['name'], s['instructions'], f"<<<{s['grid']}, {s['block']}>>>", fmt(cy('runs_basys'), 25), fmt(cy('runs'), 25), fmt(cy('runs_tang'), 25.2)])
+story.append(table(rows, [0.4 * inch, 1.15 * inch, 0.45 * inch, 0.85 * inch, 1.3 * inch, 1.3 * inch, 1.35 * inch]))
 story.append(Paragraph('Slot 3 runs the same instructions as slot 2 with different kernel arguments in the constant bank: the view zooms onto the top bulb of the set.', SM))
 
 story.append(PageBreak())
 story.append(Paragraph('Pin functions', H1))
 for title, xdc, names, notes in [
+    ('Basys 3 (reference board)', 'fpga/boards/basys3/basys3.xdc', {'clk', 'btnC', 'btnU', 'sw', 'vgaRed', 'vgaGreen', 'vgaBlue', 'Hsync', 'Vsync', 'RsTx', 'RsRx', 'led'},
+     {'clk': '100 MHz input', 'btnU': 'reset', 'btnC': 'start kernel', 'sw': 'sw1..0 kernel, sw15..14 speed', 'vgaRed': 'VGA red', 'vgaGreen': 'VGA green', 'vgaBlue': 'VGA blue', 'Hsync': 'horizontal sync', 'Vsync': 'vertical sync', 'RsTx': 'status line to PC', 'RsRx': 'kernel upload from PC', 'led': 'led15 busy, led14 done, led11 upload OK'}),
     ('Nexys A7-100T', 'fpga/boards/nexys_a7/nexys_a7.xdc', {'CLK100MHZ', 'CPU_RESETN', 'BTNC', 'SW', 'VGA_R', 'VGA_G', 'VGA_B', 'VGA_HS', 'VGA_VS', 'UART_RXD_OUT', 'LED'},
-     {'CLK100MHZ': '100 MHz input', 'CPU_RESETN': 'reset, active low', 'BTNC': 'start kernel', 'SW': 'SW1..0 kernel, SW15..14 speed', 'VGA_R': 'VGA red', 'VGA_G': 'VGA green', 'VGA_B': 'VGA blue', 'VGA_HS': 'horizontal sync', 'VGA_VS': 'vertical sync', 'UART_RXD_OUT': 'status line to PC', 'LED': 'LED15 busy, LED14 done'}),
-    ('Basys 3', 'fpga/boards/basys3/basys3.xdc', {'clk', 'btnC', 'btnU', 'sw', 'vgaRed', 'vgaGreen', 'vgaBlue', 'Hsync', 'Vsync', 'RsTx', 'led'},
-     {'clk': '100 MHz input', 'btnU': 'reset', 'btnC': 'start kernel', 'sw': 'sw1..0 kernel, sw15..14 speed', 'vgaRed': 'VGA red', 'vgaGreen': 'VGA green', 'vgaBlue': 'VGA blue', 'Hsync': 'horizontal sync', 'Vsync': 'vertical sync', 'RsTx': 'status line to PC', 'led': 'led15 busy, led14 done'})]:
+     {'CLK100MHZ': '100 MHz input', 'CPU_RESETN': 'reset, active low', 'BTNC': 'start kernel', 'SW': 'SW1..0 kernel, SW15..14 speed', 'VGA_R': 'VGA red', 'VGA_G': 'VGA green', 'VGA_B': 'VGA blue', 'VGA_HS': 'horizontal sync', 'VGA_VS': 'vertical sync', 'UART_RXD_OUT': 'status line to PC', 'LED': 'LED15 busy, LED14 done'})
+]:
     story.append(Paragraph(title, H2))
     groups = {}
     for port, pin in pins(os.path.join(ROOT, xdc), names):
@@ -196,17 +197,30 @@ story.append(table([
     ['4', 'Press the centre button', 'amber bar; image paints in; LED15 on'],
     ['5', 'Wait for done', 'green bar; LED14 on; 7-segment shows cycles; UART prints a status line'],
 ], [0.5 * inch, 3.4 * inch, 2.9 * inch]))
+story.append(Paragraph('Kernel upload', H2))
+story.append(Paragraph('Slot 3 can be rewritten from the PC over the same serial port: <font face="Courier">./pixelstorm upload kernel.psa --port /dev/ttyUSB1</font>. The board launches the kernel as soon as the checksum matches; a bad packet is ignored and a pause of about 50 ms restarts the receiver.', P))
+story.append(table([['Bytes', 'Field'], ['4', 'magic "PSK1"'], ['16', 'kernel name (shown on the status line)'], ['2 + 2', 'grid, block (little-endian)'],
+    ['2 + 1 + 1', 'framebuffer address, width, height'], ['2', 'instruction count n (at most 256)'], ['4 n', 'instructions'], ['64', '16 kernel arguments (constant bank)'],
+    ['1', 'checksum: sum of all bytes after the magic, mod 256']], [1.0 * inch, 5.8 * inch]))
+if ver.get('upload'):
+    U = ver['upload']; story.append(Paragraph(f"Verified in simulation on the Basys 3 shape: {U['kernel']} uploaded at 115200 baud, {U.get('cycles') or 0:,} GPU cycles, {U['uart']}, pixels {U['result']}. {U.get('corrupt', '')}", SM))
 story.append(Paragraph('UART status line', H2))
 story.append(Paragraph('115200 baud, 8 data bits, no parity, 1 stop bit. After every kernel: <font face="Courier">PIXELSTORM k=&lt;slot&gt; cycles=&lt;8 hex digits&gt;</font> followed by CR LF. Open it with any terminal program (PuTTY, screen, minicom) on the board\'s USB serial port.', P))
 story.append(Paragraph('Video timing', H2))
 story.append(table([['Parameter', 'Horizontal', 'Vertical'], ['Visible', '640 pixels', '480 lines'], ['Front porch / sync / back porch', '16 / 96 / 48', '10 / 2 / 33'], ['Total', '800 pixels', '525 lines'], ['Sync polarity', 'negative', 'negative'], ['Pixel clock', '25.0 MHz (VESA 25.175 MHz, accepted by monitors)', '59.5 Hz frame rate']], [2.2 * inch, 2.4 * inch, 2.2 * inch]))
 
 story.append(Paragraph('Verification', H1))
+story.append(Paragraph('Nexys A7 shape (4 warps x 8 lanes) first; the reference Basys 3 shape and the Tang Nano shape follow.', SM))
 story.append(Paragraph('Before any hardware, the complete FPGA design (loader, GPU, block-RAM memory, VGA, UART) runs in Icarus Verilog (fpga/sim/tb_fpga.v). The testbench presses start, waits for done, captures one full VGA frame from the video pins, and fpga/sim/check.js compares every framebuffer pixel on screen, at its left edge, centre and right edge, with the golden model. The GPU core itself passes the repository\'s cycle-exact RTL-versus-model suite.', P))
 rows = [['Kernel', 'GPU cycles', 'UART line (simulated)', 'Pixels checked', 'Result']]
 for r in ver['runs']:
     rows.append([r['name'], f"{r['cycles']:,}", r['uart'], f"{r['pixels']:,}", r['result']])
 story.append(table(rows, [1.3 * inch, 0.9 * inch, 2.6 * inch, 1.0 * inch, 1.0 * inch]))
+if ver.get('runs_basys'):
+    story.append(Paragraph('Reference board: the same kernels on the Basys 3 shape (8 warps x 4 lanes)', H2))
+    rows = [['Kernel', 'GPU cycles', 'UART line (simulated)', 'Pixels checked', 'Result']]
+    for r in ver['runs_basys']: rows.append([r['name'], f"{r['cycles']:,}" if r['cycles'] else '-', r['uart'], f"{r['pixels']:,}", r['result']])
+    story.append(table(rows, [1.3 * inch, 0.9 * inch, 2.6 * inch, 1.0 * inch, 1.0 * inch]))
 if ver.get('runs_tang'):
     story.append(Paragraph('Same kernels on the Tang Nano 20K shape (16 warps x 2 lanes)', H2))
     rows = [['Kernel', 'GPU cycles', 'UART line (simulated)', 'Pixels checked', 'Result']]

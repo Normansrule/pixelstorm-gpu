@@ -70,25 +70,32 @@ bundle:
 isa:
 	./pixelstorm isa-md
 
-BOARD ?= nexys_a7
+BOARD ?= basys3
 OFL_BOARD_nexys_a7 = nexys_a7_100
 OFL_BOARD_basys3   = basys3
 
 fpga-gen:               ## assemble the demo kernels into the loader ROM (fpga/gen)
 	node fpga/gen_programs.js
 
-fpga-sim: fpga-gen      ## simulate the FPGA boards: every kernel on both GPU shapes, VGA frames pixel-checked, TMDS round trip
+# GPU shapes of the three boards: name warps lanes shared-memory-banks
+FPGA_SHAPES = basys3:8:4:4 nexys_a7:4:8:8 tangnano20k:16:2:2
+
+fpga-sim: fpga-gen      ## simulate the boards: every kernel on all three GPU shapes, a UART upload, TMDS; pixel-checked
 	mkdir -p build/fpga
 	iverilog -g2012 -o build/fpga/tb_tmds.vvp fpga/sim/tb_tmds.v fpga/rtl/ps_tmds_enc.v
 	vvp -n build/fpga/tb_tmds.vvp | tee build/fpga/tmds.log | grep -E "PASS|FAIL"
-	iverilog -g2012 -I rtl -o build/fpga/tb_fpga.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v
-	iverilog -g2012 -I rtl -Ptb_fpga.NW=16 -Ptb_fpga.WS=2 -Ptb_fpga.SB=2 -o build/fpga/tb_fpga_tn.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v
-	@for s in 0 1 2 3; do \
-	  vvp -n build/fpga/tb_fpga.vvp +sel=$$s +ppm=build/fpga/frame$$s.ppm > build/fpga/sim$$s.log; \
-	  grep -a "PIXELSTORM" build/fpga/sim$$s.log | tr -d '\r'; \
-	  node fpga/sim/check.js $$s build/fpga/frame$$s.ppm || exit 1; \
-	  vvp -n build/fpga/tb_fpga_tn.vvp +sel=$$s +ppm=build/fpga/tn$$s.ppm > build/fpga/tn$$s.log; \
-	  node fpga/sim/check.js $$s build/fpga/tn$$s.ppm 16 2 | sed 's/^/tang nano 20k shape: /' || exit 1; done
+	@for sh in $(FPGA_SHAPES); do \
+	  b=$${sh%%:*}; r=$${sh#*:}; nw=$${r%%:*}; r=$${r#*:}; ws=$${r%%:*}; sb=$${r#*:}; \
+	  iverilog -g2012 -I rtl -Ptb_fpga.NW=$$nw -Ptb_fpga.WS=$$ws -Ptb_fpga.SB=$$sb -o build/fpga/tb_$$b.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v || exit 1; \
+	  for s in 0 1 2 3; do \
+	    vvp -n build/fpga/tb_$$b.vvp +sel=$$s +ppm=build/fpga/$$b-$$s.ppm > build/fpga/$$b-$$s.log; \
+	    node fpga/sim/check.js $$s build/fpga/$$b-$$s.ppm $$nw $$ws | sed "s/^/$$b: /" || exit 1; \
+	    grep -a "PIXELSTORM" build/fpga/$$b-$$s.log | tr -d '\r' | sed "s/^/$$b: /"; done; done
+	node tools/pixelstorm.js upload fpga/kernels/rings.psa --hex build/fpga/rings.hex > /dev/null
+	vvp -n build/fpga/tb_basys3.vvp +upload=build/fpga/rings.hex +ppm=build/fpga/upload.ppm > build/fpga/upload.log
+	node fpga/sim/check.js k:fpga/kernels/rings.psa build/fpga/upload.ppm 8 4 | sed 's/^/basys3 upload: /'
+	vvp -n build/fpga/tb_basys3.vvp +upload=build/fpga/rings.hex +corrupt | grep -E "PASS|FAIL" | tee build/fpga/corrupt.log
+	@grep -q PASS build/fpga/corrupt.log
 	python3 fpga/sim/ppm2png.py
 	python3 fpga/sim/report.py
 

@@ -33,7 +33,8 @@ module ps_fpga_top #(
     output wire        vga_hs, output wire vga_vs, output wire vga_de,
     output wire [15:0] led,
     output reg  [6:0]  seg, output reg [3:0] an,
-    output wire        uart_tx
+    output wire        uart_tx,
+    input  wire        uart_rx
 );
     localparam LW = 4;
     // ---------------------------------------------------------------- GPU
@@ -55,17 +56,26 @@ module ps_fpga_top #(
 
     // ---------------------------------------------------------------- start button: synchronize + edge
     reg [2:0] bs; always @(posedge clk_gpu) bs <= {bs[1:0], btn_start};
-    wire start = bs[1] & ~bs[2];
+    // kernel upload over the UART (pixel clock), launch request crossed into the GPU clock as a toggle
+    wire u_we_i, u_we_c, u_we_f, u_we_n, u_go, u_ok, u_err; wire [IMEM_AW-1:0] u_addr; wire [31:0] u_data;
+    ps_uploader #(.DIV(UART_DIV), .IMEM_AW(IMEM_AW)) u_up (.clk(clk_pix), .rst(rst), .rx(uart_rx),
+        .we_i(u_we_i), .we_c(u_we_c), .we_f(u_we_f), .we_n(u_we_n), .waddr(u_addr), .wdata(u_data), .go(u_go), .ok(u_ok), .err(u_err));
+    reg up_t = 0; always @(posedge clk_pix) if (u_go) up_t <= ~up_t;
+    reg [2:0] ut; always @(posedge clk_gpu) ut <= {ut[1:0], up_t};
+    wire up_start = ut[2] ^ ut[1];
+    wire start = (bs[1] & ~bs[2]) | up_start;
+    wire [1:0] sel_eff = up_start ? 2'd3 : sel;
 
     wire [31:0] fb_addr; wire [7:0] fb_w, fb_h; wire [1:0] kernel; wire lbusy, finished;
     ps_loader #(.IMEM_AW(IMEM_AW), .PROG(PROG), .CONS(CONS), .INFO(INFO)) u_load (
-        .clk(clk_gpu), .rst(rst), .start(start), .sel(sel),
+        .clk(clk_gpu), .rst(rst), .start(start), .sel(sel_eff),
         .imem_we(imem_we), .imem_addr(imem_addr), .imem_wdata(imem_wdata),
         .cmem_we(cmem_we), .cmem_addr(cmem_addr), .cmem_wdata(cmem_wdata),
         .mem_we(host_we), .mem_addr(host_addr), .mem_wdata(host_wdata),
         .launch(launch), .grid_dim(grid_dim), .block_dim(block_dim),
         .fb_addr(fb_addr), .fb_w(fb_w), .fb_h(fb_h), .kernel(kernel),
-        .gpu_done(done), .busy(lbusy), .finished(finished));
+        .gpu_done(done), .busy(lbusy), .finished(finished),
+        .wclk(clk_pix), .u_we_i(u_we_i), .u_we_c(u_we_c), .u_we_f(u_we_f), .u_addr(u_addr), .u_data(u_data));
 
     // ---------------------------------------------------------------- memory + video
     wire [31:0] vaddr, vdata;
@@ -82,11 +92,12 @@ module ps_fpga_top #(
     always @(posedge clk_gpu) if (running) cyc_q <= cycle;
     ps_vga #(.FONT(FONT), .NAMES(NAMES)) u_vga (.clk(clk_pix), .fb_addr(fb_addr), .fb_w(fb_w), .fb_h(fb_h), .running(s_run[1]), .done(s_fin[1]),
                   .kernel(kernel), .cycles(s_fin[1] ? cyc_q : 32'd0),
+                  .name_we(u_we_n), .name_waddr(u_addr[3:0]), .name_wdata(u_data[7:0]),
                   .maddr(vaddr), .mdata(vdata), .r(vga_r), .g(vga_g), .b(vga_b), .hs(vga_hs), .vs(vga_vs), .de(vga_de));
 
     // ---------------------------------------------------------------- LEDs, 7-segment (cycle count, hex)
     reg [23:0] tick; always @(posedge clk_pix) tick <= tick + 1'b1;
-    assign led = {s_run[1], s_fin[1], kernel, 4'b0, running ? tick[23:16] : 8'h00};
+    assign led = {s_run[1], s_fin[1], kernel, u_ok, 3'b0, running ? tick[23:16] : 8'h00};   // LED11: last upload good
     wire [15:0] shown = cyc_q[15:0];
     wire [1:0]  dig = tick[16:15];
     wire [3:0]  nib = shown[dig*4 +: 4];

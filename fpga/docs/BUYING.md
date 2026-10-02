@@ -1,5 +1,7 @@
 # Which board to buy
 
+> **Reference test board: Digilent Basys 3** (<https://www.amazon.com/dp/B00NUE1WOG>). Every release is simulated on its exact GPU shape, its quick-start guide lists what you should see at each step ([BASYS3-QUICKSTART.md](BASYS3-QUICKSTART.md)), and the build scripts default to it. The other two boards are supported alternatives.
+
 Pixelstorm-F runs on three boards. All three are verified the same way: the whole board design is simulated (`make fpga-sim`) and every pixel on the captured video frame is checked against the golden model. Prices are approximate and change; check the listing.
 
 | | **Sipeed Tang Nano 20K** | **Digilent Basys 3** | **Digilent Nexys A7-100T** |
@@ -11,7 +13,7 @@ Pixelstorm-F runs on three boards. All three are verified the same way: the whol
 | Video out | **HDMI** (DVI 640x480) | VGA | VGA |
 | Controls | 2 buttons, 6 LEDs | 16 switches, 5 buttons, 16 LEDs, 4-digit display | 16 switches, buttons, 16 LEDs, 8-digit display |
 | Toolchain | **fully open source** (OSS CAD Suite) or Gowin EDA Education (free) | Vivado ML Standard (free) | Vivado ML Standard (free) |
-| Mandelbrot kernel | 154,252 cycles, 6.1 ms | 81,661 cycles, 3.3 ms | 46,216 cycles, 1.8 ms |
+| Mandelbrot kernel | 154,252 cycles, 6.1 ms | 81,660 cycles, 3.3 ms | 46,216 cycles, 1.8 ms |
 | Best for | anyone: cheapest, no licences, plugs into a TV (tightest fit: check the utilisation report from `make fpga-tang`) | university labs that use Vivado | the full-width GPU and room to grow (a second SM) |
 
 **Also needed:** a USB-C cable (Tang Nano) or micro-USB cable (Basys 3, Nexys A7), and a monitor with HDMI (Tang Nano) or VGA. Most monitors and TVs accept 640x480. A VGA-to-HDMI adapter works for the Digilent boards if your screen has no VGA input.

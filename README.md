@@ -71,11 +71,11 @@ Every release carries the GDS as a download (built by `.github/workflows/silicon
 
 ## Pixelstorm on an FPGA
 
-The same Verilog on real hardware, from **about $30**: the [Sipeed Tang Nano 20K](https://www.amazon.com/dp/B0C5XJV83K) (HDMI, fully open-source tools), the [Digilent Basys 3](https://www.amazon.com/dp/B00NUE1WOG), or the Nexys A7-100T. Press a button and the screen shows the image painting in, with the kernel name and cycle count underneath; the serial port reports `PIXELSTORM k=2 cycles=0000B488`. Which board to buy: [fpga/docs/BUYING.md](fpga/docs/BUYING.md).
+The same Verilog on real hardware. **Reference test board: the [Digilent Basys 3](https://www.amazon.com/dp/B00NUE1WOG)** ([quick start](fpga/docs/BASYS3-QUICKSTART.md)); also supported: the [Sipeed Tang Nano 20K](https://www.amazon.com/dp/B0C5XJV83K) (about $30, HDMI, open-source tools) and the Nexys A7-100T. Press a button and the screen shows the image painting in, with the kernel name and cycle count underneath; the serial port reports `PIXELSTORM k=2 cycles=0000B488`. Which board to buy: [fpga/docs/BUYING.md](fpga/docs/BUYING.md).
 
 | | |
 |---|---|
-| ![VGA output of the simulated board](docs/img/fpga-vga-all.png) | `make fpga-sim` simulates the whole board and checks every pixel on the captured VGA frame against the golden model.<br><br>`make fpga-tang` builds and loads the Tang Nano 20K with open-source tools; `make fpga-bit BOARD=nexys_a7` (or `basys3`) builds with Vivado.<br><br>Datasheet: [`fpga/docs/pixelstorm-fpga-datasheet.pdf`](fpga/docs/pixelstorm-fpga-datasheet.pdf). Chapter: [15. Pixelstorm on an FPGA](docs/15-fpga.md). |
+| ![VGA output of the simulated board](docs/img/fpga-vga-all.png) | `make fpga-sim` simulates the whole board and checks every pixel on the captured VGA frame against the golden model.<br><br>`make fpga-bit` builds the Basys 3 bitstream with Vivado and `make fpga-prog` loads it. `./pixelstorm upload my_kernel.psa --port /dev/ttyUSB1` runs your own kernel on the board **without a new bitstream**.<br><br>Datasheet: [`fpga/docs/pixelstorm-fpga-datasheet.pdf`](fpga/docs/pixelstorm-fpga-datasheet.pdf). Chapter: [15. Pixelstorm on an FPGA](docs/15-fpga.md). |
 
 ## The course
 

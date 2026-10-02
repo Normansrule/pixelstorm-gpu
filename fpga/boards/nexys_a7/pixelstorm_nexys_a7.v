@@ -16,7 +16,8 @@ module pixelstorm_nexys_a7 (
     output wire        VGA_HS, output wire VGA_VS,
     output wire        CA, CB, CC, CD, CE, CF, CG, DP,
     output wire [7:0]  AN,
-    output wire        UART_RXD_OUT
+    output wire        UART_RXD_OUT,
+    input  wire        UART_TXD_IN
 );
     wire clk_pix, clk_gpu, rst;
     clocking_xc7 u_clk (.clk100(CLK100MHZ), .rst_in(~CPU_RESETN), .speed(SW[15:14]), .clk_pix(clk_pix), .clk_gpu(clk_gpu), .rst(rst));
@@ -24,7 +25,7 @@ module pixelstorm_nexys_a7 (
     ps_fpga_top #(.NUM_SMS(1), .NUM_WARPS(4), .WARP_SIZE(8), .NUM_REGS(16), .SMEM_WORDS(256), .SMEM_BANKS(8), .IMEM_AW(8)) u_top (
         .clk_gpu(clk_gpu), .clk_pix(clk_pix), .rst(rst), .btn_start(BTNC), .sel(SW[1:0]),
         .vga_r(VGA_R), .vga_g(VGA_G), .vga_b(VGA_B), .vga_hs(VGA_HS), .vga_vs(VGA_VS), .vga_de(de),
-        .led(LED), .seg(seg), .an(an), .uart_tx(UART_RXD_OUT));
+        .led(LED), .seg(seg), .an(an), .uart_tx(UART_RXD_OUT), .uart_rx(UART_TXD_IN));
     assign {CG, CF, CE, CD, CC, CB, CA} = seg;
     assign DP = 1'b1;
     assign AN = {4'b1111, an};
