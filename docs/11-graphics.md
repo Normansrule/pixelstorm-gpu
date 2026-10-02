@@ -1,6 +1,6 @@
 # 11. Graphics: pixels, triangles and fractals
 
-> **Part 4: Applications and graphics**, chapter 11 of 17. About 30 minutes.
+> **Part 4: Applications and graphics**, chapter 11 of 18. About 30 minutes.
 
 **In this chapter you will learn**
 
@@ -125,4 +125,4 @@ Nearby pixels in 2D usually take similar paths and touch nearby texture memory, 
 
 ---
 
-[Previous: 10. Applications: the 15 kernels](10-applications.md) | [Course map](00-start-here.md) | [Next: 12. Make it better](12-make-it-better.md)
+[Previous: 10. Applications: the 16 kernels](10-applications.md) | [Course map](00-start-here.md) | [Next: 12. Make it better](12-make-it-better.md)

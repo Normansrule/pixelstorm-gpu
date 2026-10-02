@@ -1,6 +1,6 @@
 # 5. Life of one instruction
 
-> **Part 2: The hardware**, chapter 5 of 17. About 15 minutes.
+> **Part 2: The hardware**, chapter 5 of 18. About 15 minutes.
 
 **In this chapter you will learn**
 

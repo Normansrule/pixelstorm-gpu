@@ -1,6 +1,6 @@
 # 1. What a GPU is
 
-> **Part 1: Concepts**, chapter 1 of 17. About 10 minutes.
+> **Part 1: Concepts**, chapter 1 of 18. About 10 minutes.
 
 **In this chapter you will learn**
 

@@ -1,6 +1,6 @@
 # 2. SIMT: threads, warps and blocks
 
-> **Part 1: Concepts**, chapter 2 of 17. About 15 minutes.
+> **Part 1: Concepts**, chapter 2 of 18. About 15 minutes.
 
 **In this chapter you will learn**
 

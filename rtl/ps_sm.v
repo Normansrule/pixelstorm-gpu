@@ -83,8 +83,11 @@ module ps_sm #(
     reg  [NT*IMEM_AW-1:0]   lpc;                // one PC per thread (lane)
     reg  [NT-1:0]           ldone;              // thread has executed EXIT
     reg  [NT*4-1:0]         preds;              // P0..P3 per thread
-    reg  [31:0]             rf   [0:NT*NUM_REGS-1];  // register file
-    reg  [31:0]             smem [0:SMEM_WORDS-1];   // shared memory (scratchpad)
+    // register file: one bank per lane (lane g holds registers of threads w*WARP_SIZE+g),
+    // declared inside the lane generate block below. Each bank is a small multi-read
+    // RAM, which FPGAs build from distributed RAM and ASICs from register-file macros.
+    // shared memory: SMEM_BANKS small RAMs (bank = address mod SMEM_BANKS), declared
+    // after the bank resolver; a pass touches at most one word per bank.
     reg  [WW-1:0]           rr_ptr;             // round-robin pointer
 
     // current instruction bookkeeping
@@ -194,10 +197,17 @@ module ps_sm #(
         for (g = 0; g < WARP_SIZE; g = g + 1) begin : lane
             wire [31:0] tidx  = cw * WARP_SIZE + g;           // thread index in block
             wire [31:0] rbase = tidx * NUM_REGS;
-            wire [31:0] a     = rf[rbase + d_rs1];
-            wire [31:0] b     = rf[rbase + d_rs2];
-            wire [31:0] c     = rf[rbase + d_rs3];
-            wire [31:0] dval  = rf[rbase + d_rd];             // store data lives in Rd
+            reg  [31:0] rfl [0:NUM_WARPS*NUM_REGS-1];          // this lane's register bank
+            wire [31:0] a     = rfl[cw * NUM_REGS + d_rs1];
+            wire [31:0] b     = rfl[cw * NUM_REGS + d_rs2];
+            wire [31:0] c     = rfl[cw * NUM_REGS + d_rs3];
+            wire [31:0] dval  = rfl[cw * NUM_REGS + d_rd];      // store data lives in Rd
+            always @(posedge clk)                               // writeback, one port per bank
+                if (!rst && state == S_WB && cexe[g] && d_wrd) rfl[cw * NUM_REGS + d_rd] <= r_res[g*32 +: 32];
+`ifndef SYNTHESIS
+            integer zz;
+            initial for (zz = 0; zz < NUM_WARPS*NUM_REGS; zz = zz + 1) rfl[zz] = 32'd0;
+`endif
             wire [3:0]  pr    = preds[tidx*4 +: 4];
             reg  [31:0] srv;
             always @* begin
@@ -332,6 +342,39 @@ module ps_sm #(
         end
     end
 
+    // ---- shared-memory banks ---------------------------------------------------
+    // Each bank is its own RAM with one read and one write per cycle. The
+    // resolver above guarantees every lane selected in a pass that maps to this
+    // bank asks for the same word, so the bank's address is simply the address
+    // of any selected lane in it.
+    wire [SMEM_BANKS*32-1:0] bank_q;
+    genvar sbk;
+    generate
+        for (sbk = 0; sbk < SMEM_BANKS; sbk = sbk + 1) begin : sbank
+            reg  [31:0] mem [0:SMEM_WORDS/SMEM_BANKS-1];
+            reg         hit;
+            reg  [SMEM_AW-1:0] ba;
+            reg  [31:0] wd;
+            integer k;
+            always @* begin
+                hit = 1'b0; ba = {SMEM_AW{1'b0}}; wd = 32'd0;
+                for (k = 0; k < WARP_SIZE; k = k + 1)
+                    if (s_sel[k] && r_addr[k*32 +: BANK_LOG] == sbk) begin
+                        hit = 1'b1; ba = r_addr[k*32 +: SMEM_AW]; wd = r_data[k*32 +: 32];   // last lane wins, as before
+                    end
+            end
+            wire [SMEM_AW-BANK_LOG-1:0] row = ba[SMEM_AW-1:BANK_LOG];
+            assign bank_q[sbk*32 +: 32] = mem[row];
+            always @(posedge clk)
+                if (!rst && state == S_MEM && d_shared && have_leader && hit && (d_store || d_atom))
+                    mem[row] <= d_atom ? mem[row] + wd : wd;
+`ifndef SYNTHESIS
+            integer zz;
+            initial for (zz = 0; zz < SMEM_WORDS/SMEM_BANKS; zz = zz + 1) mem[zz] = 32'd0;
+`endif
+        end
+    endgenerate
+
     // -------------------------------------------------------------------------
     // Trace switch (simulation only)
     // -------------------------------------------------------------------------
@@ -342,8 +385,6 @@ module ps_sm #(
     integer z;
     initial begin
         trace_on = $test$plusargs("trace");
-        for (z = 0; z < NT*NUM_REGS; z = z + 1) rf[z]   = 32'd0;
-        for (z = 0; z < SMEM_WORDS;  z = z + 1) smem[z] = 32'd0;
     end
 `else
     initial trace_on = 1'b0;
@@ -452,18 +493,16 @@ module ps_sm #(
                         for (j = 0; j < WARP_SIZE; j = j + 1) begin
                             if (s_sel[j]) begin
                                 if (d_load)
-                                    r_res[j*32 +: 32] <= smem[r_addr[j*32 +: SMEM_AW]];
+                                    r_res[j*32 +: 32] <= bank_q[r_addr[j*32 +: BANK_LOG]*32 +: 32];
                                 if (d_store) begin
-                                    smem[r_addr[j*32 +: SMEM_AW]] <= r_data[j*32 +: 32];
 `ifndef SYNTHESIS
                                     if (trace_on) $display("{\"ev\":\"sw\",\"t\":%0d,\"sm\":%0d,\"a\":%0d,\"v\":%0d}", cycle, SM_ID, r_addr[j*32 +: SMEM_AW], r_data[j*32 +: 32]);
 `endif
                                 end
                                 if (d_atom) begin
-                                    r_res[j*32 +: 32] <= smem[r_addr[j*32 +: SMEM_AW]];
-                                    smem[r_addr[j*32 +: SMEM_AW]] <= smem[r_addr[j*32 +: SMEM_AW]] + r_data[j*32 +: 32];
+                                    r_res[j*32 +: 32] <= bank_q[r_addr[j*32 +: BANK_LOG]*32 +: 32];
 `ifndef SYNTHESIS
-                                    if (trace_on) $display("{\"ev\":\"sw\",\"t\":%0d,\"sm\":%0d,\"a\":%0d,\"v\":%0d}", cycle, SM_ID, r_addr[j*32 +: SMEM_AW], smem[r_addr[j*32 +: SMEM_AW]] + r_data[j*32 +: 32]);
+                                    if (trace_on) $display("{\"ev\":\"sw\",\"t\":%0d,\"sm\":%0d,\"a\":%0d,\"v\":%0d}", cycle, SM_ID, r_addr[j*32 +: SMEM_AW], bank_q[r_addr[j*32 +: BANK_LOG]*32 +: 32] + r_data[j*32 +: 32]);
 `endif
                                 end
                             end
@@ -501,8 +540,6 @@ module ps_sm #(
             // -----------------------------------------------------------------
             S_WB: begin
                 for (j = 0; j < WARP_SIZE; j = j + 1) begin
-                    if (cexe[j] && d_wrd)
-                        rf[(cw*WARP_SIZE + j)*NUM_REGS + d_rd] <= r_res[j*32 +: 32];
                     if (cexe[j] && d_wpred)
                         preds[(cw*WARP_SIZE + j)*4 + d_rd[1:0]] <= r_pres[j];
                     lpc[(cw*WARP_SIZE + j)*IMEM_AW +: IMEM_AW] <= r_npc[j*IMEM_AW +: IMEM_AW];

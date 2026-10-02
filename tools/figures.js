@@ -701,5 +701,34 @@ function figSiliconArea() {
   write('fig-silicon-area.svg', 960, h + 10, b, 'Silicon area by block and most used standard cells');
 }
 
+// ---------------------------------------------------------------------------
+// the cache: same kernels with and without rtl/ps_cache.v (golden model, which
+// ./pixelstorm test proves equal to the RTL cycle for cycle)
+// ---------------------------------------------------------------------------
+function figCache() {
+  const K = [['07_matmul.psa', 'matmul', 'reuses rows and columns'], ['08_coalescing.psa', 'coalescing', 'a little reuse'],
+             ['13_gradient_shader.psa', 'gradient_shader', 'pure streaming'], ['06_histogram.psa', 'histogram', 'atomics bypass the cache']];
+  const rows = K.map(([f, n, why]) => {
+    const src = fs.readFileSync(path.join(ROOT, 'kernels', f), 'utf8').replace(/^\.cache.*$/m, '');
+    const run = (cl) => { const t = W.buildTrace(src, { numSms: 2, cacheLines: cl }); const hits = t.events.filter(e => e.ev === 'cache' && e.hit).length;
+      const look = t.events.filter(e => e.ev === 'cache').length; const mreq = t.events.filter(e => e.ev === 'mreq').length; return { cyc: t.meta.cycles, dram: mreq - hits, hits, look }; };
+    return { n, why, a: run(0), b: run(16) };
+  });
+  let b = T(20, 32, 'A 16-line cache between the arbiter and DRAM: who wins, who loses', 'h', 22);
+  b += T(20, 52, 'Same instructions, 2 SMs, DRAM latency 8. Grey: no cache. Colored: with rtl/ps_cache.v. Computed by the golden model, which the tests match to the RTL.', 'ink2', 13);
+  const mx = Math.max(...rows.map(r => Math.max(r.a.cyc, r.b.cyc)));
+  rows.forEach((r, i) => {
+    const y = 84 + i * 86; const d = (r.b.cyc - r.a.cyc) / r.a.cyc; const good = d < 0;
+    b += T(20, y + 14, r.n, 'h', 16) + T(20, y + 32, r.why, 'ink2', 12);
+    const W1 = r.a.cyc / mx * 390, W2 = r.b.cyc / mx * 390;
+    b += R(200, y, W1, 18, 'fs', 3, 'opacity=".45"') + T(206 + W1, y + 14, `${r.a.cyc.toLocaleString('en-US')} cycles`, 'mono ink2', 11);
+    b += R(200, y + 24, W2, 18, good ? 'fg' : 'fm', 3) + T(206 + W2, y + 38, `${r.b.cyc.toLocaleString('en-US')} cycles (${good ? '' : '+'}${(100 * d).toFixed(0)}%)`, 'mono', 11);
+    b += T(780, y + 14, `${r.b.look ? Math.round(100 * r.b.hits / r.b.look) : 0}% hits`, 'h ' + (r.b.hits ? 'fg' : 'ink3'), 16);
+    b += T(780, y + 34, `DRAM trips ${r.a.dram} -> ${r.b.dram}`, 'mono ink2', 11.5);
+  });
+  b += T(20, 84 + rows.length * 86 + 8, 'Reuse pays: most matmul loads never reach DRAM. Streaming loses a little: every miss now takes an extra hop through the cache.', 'ink2', 13);
+  write('fig-cache.svg', 960, 84 + rows.length * 86 + 26, b, 'Cycles and DRAM trips with and without the cache');
+}
+
 const SIL = fs.existsSync(path.join(ROOT, 'web', 'data', 'silicon.json')) ? [figSiliconFlow, figSiliconArea] : [];
-[...SIL, figGallery, figRaster, figMandelDivergence, figThreads, figShuffle, figTop, figSm, figEncoding, figFsm, figLifecycle, figDivergence, figCoalescing, figBanks, figTimelines, figScale, figLatency, figHierarchy].forEach(f => f());
+[...SIL, figCache, figGallery, figRaster, figMandelDivergence, figThreads, figShuffle, figTop, figSm, figEncoding, figFsm, figLifecycle, figDivergence, figCoalescing, figBanks, figTimelines, figScale, figLatency, figHierarchy].forEach(f => f());

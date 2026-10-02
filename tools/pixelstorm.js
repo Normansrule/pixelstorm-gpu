@@ -46,8 +46,11 @@ function cfgFrom(asm, opts) {
   const cfg = Object.assign({}, W.DEFAULT_CFG);
   if (asm.config.sms !== null) cfg.numSms = asm.config.sms;
   if (asm.config.lat !== null) cfg.lat = asm.config.lat;
+  if (asm.config.cache !== null) cfg.cacheLines = asm.config.cache;
   if (opts.sms) cfg.numSms = +opts.sms;
   if (opts.lat) cfg.lat = +opts.lat;
+  if (opts.cache !== undefined) cfg.cacheLines = +opts.cache;
+  if (cfg.cacheLines && (cfg.cacheLines & (cfg.cacheLines - 1))) throw new Error('--cache must be a power of two (for example 16)');
   return cfg;
 }
 
@@ -93,21 +96,21 @@ function cmdSim(opts) {
 // ---------------------------------------------------------------------------
 function which(bin) { return spawnSync('sh', ['-c', `command -v ${bin}`]).status === 0; }
 
-function compileTb(numSms) {
+function compileTb(numSms, cacheLines = 0) {
   if (!which('iverilog')) throw new Error('iverilog not found. Run: sudo apt install -y iverilog   (or scripts/setup_ubuntu.sh)');
   fs.mkdirSync(BUILD, { recursive: true });
-  const out = path.join(BUILD, `tb_sms${numSms}.vvp`);
+  const out = path.join(BUILD, `tb_sms${numSms}_c${cacheLines}.vvp`);
   const srcs = [path.join(ROOT, 'sim/tb_gpu.v'), ...fs.readdirSync(path.join(ROOT, 'rtl')).filter(f => f.endsWith('.v')).map(f => path.join(ROOT, 'rtl', f))];
   const deps = [...srcs, path.join(ROOT, 'rtl/ps_defines.vh')];
   const stale = !fs.existsSync(out) || deps.some(f => fs.statSync(f).mtimeMs > fs.statSync(out).mtimeMs);
-  if (stale) execFileSync('iverilog', ['-g2012', '-I', path.join(ROOT, 'rtl'), `-Ptb_gpu.NUM_SMS=${numSms}`, '-o', out, ...srcs], { stdio: 'inherit' });
+  if (stale) execFileSync('iverilog', ['-g2012', '-I', path.join(ROOT, 'rtl'), `-Ptb_gpu.NUM_SMS=${numSms}`, `-Ptb_gpu.CACHE_LINES=${cacheLines}`, '-o', out, ...srcs], { stdio: 'inherit' });
   return out;
 }
 
 function runRtl(k, opts) {
   const asm = W.assemble(k.src);
   const cfg = cfgFrom(asm, opts);
-  const vvp = compileTb(cfg.numSms);
+  const vvp = compileTb(cfg.numSms, cfg.cacheLines || 0);
   const dir = path.join(BUILD, asm.config.name);
   fs.mkdirSync(dir, { recursive: true });
   const f = (n) => path.join(dir, n);
@@ -167,8 +170,12 @@ function cmdTest(opts) {
   const smsList = opts.sms ? [+opts.sms] : [1, 2];
   for (const file of kernelFiles()) {
     const k = { path: file, src: fs.readFileSync(file, 'utf8') };
-    for (const sms of smsList) {
-      const o = Object.assign({}, opts, { sms });
+    const own = W.assemble(k.src).config.cache;
+    // every kernel on its own configuration, plus the cached GPU (16 lines) on 2 SMs
+    const runs = smsList.map(sms => ({ sms, cache: opts.cache !== undefined ? +opts.cache : (own || 0) }));
+    if (opts.cache === undefined && !opts.sms && !own) runs.push({ sms: 2, cache: 16 });
+    for (const { sms, cache } of runs) {
+      const o = Object.assign({}, opts, { sms, cache });
       const r = runRtl(k, o);
       const sim = new W.Simulator(r.cfg);
       sim.load(r.asm.words, r.asm.config.params, r.asm.config.data);
@@ -186,19 +193,24 @@ function cmdTest(opts) {
         const bad = rc.findIndex((e, i) => key(e) !== key(mc[i]));
         if (bad >= 0) problems.push(`cycle-exact mismatch at commit #${bad}: rtl ${key(rc[bad])} vs model ${key(mc[bad])}`);
       }
+      const ck = (e) => `${e.t}|${e.hit}|${e.a}`;
+      const rh = r.events.filter(e => e.ev === 'cache').map(ck).join(','), mh = m.events.filter(e => e.ev === 'cache').map(ck).join(',');
+      if (rh !== mh) problems.push('cache hit/miss sequence differs between RTL and model');
       const name = r.asm.config.name;
       if (EXPECT[name]) {
         const err = EXPECT[name](r.gmem, r.asm);
         if (err) problems.push(`wrong answer: ${err}`);
       }
       const s = summarize(r.events, r.cfg);
+      const hits = r.events.filter(e => e.ev === 'cache' && e.hit).length, look = r.events.filter(e => e.ev === 'cache').length;
+      const cinfo = cache ? `  cache ${cache}: ${look ? Math.round(100 * hits / look) : 0}% hits` : '';
       const tag = problems.length ? `${color.r}FAIL${color.x}` : `${color.g}PASS${color.x}`;
-      console.log(`${tag} ${name.padEnd(20)} sms=${sms}  ${String(r.cycles).padStart(6)} cycles  ${String(s.instructions).padStart(4)} warp-instr  SIMD eff ${(100 * s.simdEfficiency).toFixed(0).padStart(3)}%`);
+      console.log(`${tag} ${name.padEnd(20)} sms=${sms}${cache ? ' c' + String(cache).padEnd(3) : '     '} ${String(r.cycles).padStart(6)} cycles  ${String(s.instructions).padStart(4)} warp-instr  SIMD eff ${(100 * s.simdEfficiency).toFixed(0).padStart(3)}%${cinfo}`);
       for (const p of problems) console.log(`     ${color.r}${p}${color.x}`);
       if (problems.length) fail++;
     }
   }
-  console.log(fail ? `\n${color.r}${fail} failure(s)${color.x}` : `\n${color.g}all kernels match: RTL == golden model, cycle for cycle${color.x}`);
+  console.log(fail ? `\n${color.r}${fail} failure(s)${color.x}` : `\n${color.g}all kernels match: RTL == golden model, cycle for cycle (with and without the cache)${color.x}`);
   process.exitCode = fail ? 1 : 0;
 }
 
@@ -258,6 +270,7 @@ ${color.y}Check and publish${color.x}
 ${color.y}Options${color.x}
   --sms N     number of Streaming Multiprocessors (default 2)
   --lat N     DRAM latency in cycles (default 8)
+  --cache N   add a shared N-line cache between the arbiter and DRAM (power of two, 0 = none)
   --trace F   write the trace JSON to F
   --quiet     less output
 

@@ -16,3 +16,13 @@ jobs:
           python3 tools/rtl_chapter.py && python3 tools/silicon/chapter.py && python3 tools/course.py
           git diff --stat docs/
           git diff --exit-code docs/ || { echo '::error::docs/ is out of date: run make all (and make silicon if you changed the silicon flow), then commit docs/'; exit 1; }
+
+  fpga-board-sim:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: sudo apt-get update && sudo apt-get install -y iverilog python3-pil
+      - name: FPGA board simulation (every demo kernel, VGA frame checked pixel by pixel)
+        run: make fpga-sim

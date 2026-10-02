@@ -20,6 +20,7 @@ module tb_gpu;
     parameter IMEM_AW    = 10;
     parameter CONST_AW   = 4;
     parameter GMEM_WORDS = 65536;
+    parameter CACHE_LINES = 0;       // compile with -Ptb_gpu.CACHE_LINES=16 for the cached GPU
 
     reg clk = 1'b0;
     always #5 clk = ~clk;
@@ -46,7 +47,7 @@ module tb_gpu;
 
     ps_gpu_top #(
         .NUM_SMS(NUM_SMS), .NUM_WARPS(NUM_WARPS), .WARP_SIZE(WARP_SIZE),
-        .LINE_WORDS(LINE_WORDS), .IMEM_AW(IMEM_AW), .CONST_AW(CONST_AW)
+        .LINE_WORDS(LINE_WORDS), .IMEM_AW(IMEM_AW), .CONST_AW(CONST_AW), .CACHE_LINES(CACHE_LINES)
     ) dut (
         .clk(clk), .rst(rst),
         .host_imem_we(host_imem_we), .host_imem_addr(host_imem_addr), .host_imem_wdata(host_imem_wdata),

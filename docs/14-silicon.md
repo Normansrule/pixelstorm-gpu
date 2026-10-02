@@ -1,6 +1,6 @@
 # 14. From Verilog to silicon
 
-> **Part 5: Build on it**, chapter 14 of 17. About 35 minutes.
+> **Part 5: Build on it**, chapter 14 of 18. About 35 minutes.
 
 **In this chapter you will learn**
 
@@ -164,4 +164,4 @@ Taps tie the wells to power so the chip does not latch up; decaps are capacitors
 
 ---
 
-[Previous: 13. From Pixelstorm to a real GPU](13-real-world-gpus.md) | [Course map](00-start-here.md) | [Next: 15. References](15-references.md)
+[Previous: 13. From Pixelstorm to a real GPU](13-real-world-gpus.md) | [Course map](00-start-here.md) | [Next: 15. Pixelstorm on an FPGA](15-fpga.md)

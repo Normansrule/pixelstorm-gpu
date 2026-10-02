@@ -1,6 +1,6 @@
-# 17. Troubleshooting
+# 18. Troubleshooting
 
-> **Appendix**, chapter 17 of 17. About 5 minutes.
+> **Appendix**, chapter 18 of 18. About 5 minutes.
 
 ---
 
@@ -37,4 +37,4 @@
 
 ---
 
-[Previous: 16. Glossary](16-glossary.md) | [Course map](00-start-here.md) | [Back to the start](00-start-here.md)
+[Previous: 17. Glossary](17-glossary.md) | [Course map](00-start-here.md) | [Back to the start](00-start-here.md)

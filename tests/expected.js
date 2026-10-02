@@ -116,4 +116,5 @@ module.exports = {
     }
     return check(g, 0x1000, px, 'fb');
   },
+  matmul_cached(g, asm) { return module.exports.matmul(g, asm); },
 };

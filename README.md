@@ -2,7 +2,7 @@
 
 <h1 align="center">Pixelstorm</h1>
 <p align="center"><b>An open-source GPU you can watch paint.</b><br>
-A complete GPU in Verilog that renders shaders, triangles and fractals, placed as real SkyWater 130 nm silicon, with a 3D chip explorer, a cycle-by-cycle visualizer, six interactive labs and a 17-chapter course.</p>
+A complete GPU in Verilog that renders shaders, triangles and fractals, placed as real SkyWater 130 nm silicon, with a 3D chip explorer, a cycle-by-cycle visualizer, six interactive labs and a 18-chapter course.</p>
 
 <p align="center">
 <a href="https://normansrule.github.io/pixelstorm-gpu/"><b>Website</b></a> &nbsp;|&nbsp;
@@ -37,10 +37,11 @@ A GPU (Graphics Processing Unit) draws an image by running one small program on 
 | **Real hardware** | About 980 lines of commented Verilog: 2 SMs with 4 warps of 8 lanes, a warp scheduler with per-thread PCs, a coalescing load/store unit, 8-bank shared memory, barriers, shuffles, votes and atomics. Synthesizes with Yosys. |
 | **Graphics** | A framebuffer (`.fb`), a gradient pixel shader, a triangle rasterizer built on edge functions with barycentric color, and the Mandelbrot set in Q16.16 fixed point. |
 | **A CUDA-style ISA** | 40 instructions, each mapped to the CUDA, PTX or SASS operation it imitates. `./pixelstorm explain SHFL` |
-| **15 example kernels** | vector add, SAXPY, divergence, reductions, histogram, matrix multiply, coalescing, bank conflicts, vote, scan, image threshold, and the three graphics kernels. |
-| **Proof it is right** | `./pixelstorm test`: every kernel on 1 and 2 SMs, RTL and model agree on every commit and every memory word, and the answer matches a CPU. |
+| **16 example kernels** | vector add, SAXPY, divergence, reductions, histogram, matrix multiply, coalescing, bank conflicts, vote, scan, image threshold, the three graphics kernels, and matrix multiply on the cached GPU. |
+| **A real cache** | `rtl/ps_cache.v`: an optional shared, direct-mapped, write-through cache. Matrix multiply runs 25% faster with 80% hits; streaming kernels show the cost. |
+| **Proof it is right** | `./pixelstorm test`: every kernel on 1 and 2 SMs and on the cached GPU, RTL and model agree on every commit, every memory word and every cache hit, and the answer matches a CPU. |
 | **Silicon** | SkyWater 130 nm synthesis, a placed GDS layout, KLayout renders and 3D standard cells. |
-| **Course** | 17 chapters in five parts with figures drawn from real traces and "check yourself" questions. |
+| **Course** | 18 chapters in five parts with figures drawn from real traces and "check yourself" questions. |
 
 ## From Verilog to silicon
 
@@ -68,6 +69,14 @@ make gds          # open build/silicon/ps_s130.gds in KLayout (Display, Full Hie
 
 Every release carries the GDS as a download (built by `.github/workflows/silicon.yml`), and the [silicon page](https://normansrule.github.io/pixelstorm-gpu/silicon.html) lets you dive from the die to a transistor and spin real sky130 gates in 3D.
 
+## Pixelstorm on an FPGA
+
+The same Verilog on real hardware, from **about $30**: the [Sipeed Tang Nano 20K](https://www.amazon.com/dp/B0C5XJV83K) (HDMI, fully open-source tools), the [Digilent Basys 3](https://www.amazon.com/dp/B00NUE1WOG), or the Nexys A7-100T. Press a button and the screen shows the image painting in, with the kernel name and cycle count underneath; the serial port reports `PIXELSTORM k=2 cycles=0000B488`. Which board to buy: [fpga/docs/BUYING.md](fpga/docs/BUYING.md).
+
+| | |
+|---|---|
+| ![VGA output of the simulated board](docs/img/fpga-vga-all.png) | `make fpga-sim` simulates the whole board and checks every pixel on the captured VGA frame against the golden model.<br><br>`make fpga-tang` builds and loads the Tang Nano 20K with open-source tools; `make fpga-bit BOARD=nexys_a7` (or `basys3`) builds with Vivado.<br><br>Datasheet: [`fpga/docs/pixelstorm-fpga-datasheet.pdf`](fpga/docs/pixelstorm-fpga-datasheet.pdf). Chapter: [15. Pixelstorm on an FPGA](docs/15-fpga.md). |
+
 ## The course
 
 | Part | Chapters |
@@ -76,8 +85,8 @@ Every release carries the GDS as a download (built by `.github/workflows/silicon
 | **2. The hardware** | [4 Microarchitecture](docs/04-microarchitecture.md), [5 Life of one instruction](docs/05-instruction-lifecycle.md), [6 Reading the RTL](docs/06-reading-the-rtl.md) |
 | **3. Performance** | [7 Divergence](docs/07-divergence.md), [8 Memory: coalescing and banks](docs/08-memory.md), [9 Synchronization](docs/09-synchronization.md) |
 | **4. Applications and graphics** | [10 Applications](docs/10-applications.md), [11 Graphics: pixels, triangles and fractals](docs/11-graphics.md) |
-| **5. Build on it** | [12 Make it better](docs/12-make-it-better.md), [13 From Pixelstorm to a real GPU](docs/13-real-world-gpus.md), [14 From Verilog to silicon](docs/14-silicon.md) |
-| **Appendix** | [15 References](docs/15-references.md), [16 Glossary](docs/16-glossary.md), [17 Troubleshooting](docs/17-troubleshooting.md) |
+| **5. Build on it** | [12 Make it better](docs/12-make-it-better.md), [13 From Pixelstorm to a real GPU](docs/13-real-world-gpus.md), [14 From Verilog to silicon](docs/14-silicon.md), [15 Pixelstorm on an FPGA](docs/15-fpga.md) |
+| **Appendix** | [16 References](docs/16-references.md), [17 Glossary](docs/17-glossary.md), [18 Troubleshooting](docs/18-troubleshooting.md) |
 
 | | |
 |---|---|

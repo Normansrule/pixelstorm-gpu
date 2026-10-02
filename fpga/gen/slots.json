@@ -1,0 +1,126 @@
+[
+ {
+  "slot": 0,
+  "name": "gradient_shader",
+  "file": "13_gradient_shader.psa",
+  "grid": 32,
+  "block": 32,
+  "fb": {
+   "addr": 4096,
+   "width": 32,
+   "height": 32
+  },
+  "params": [
+   4096,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "instructions": 20
+ },
+ {
+  "slot": 1,
+  "name": "triangle_raster",
+  "file": "14_triangle_raster.psa",
+  "grid": 32,
+  "block": 32,
+  "fb": {
+   "addr": 4096,
+   "width": 32,
+   "height": 32
+  },
+  "params": [
+   6,
+   4294967240,
+   2888,
+   48,
+   28,
+   4294965648,
+   4294967242,
+   28,
+   1616,
+   4096,
+   5851,
+   1054760,
+   0,
+   0,
+   0,
+   0
+  ],
+  "instructions": 46
+ },
+ {
+  "slot": 2,
+  "name": "mandelbrot",
+  "file": "15_mandelbrot.psa",
+  "grid": 16,
+  "block": 32,
+  "fb": {
+   "addr": 4096,
+   "width": 32,
+   "height": 16
+  },
+  "params": [
+   4096,
+   4294807552,
+   4294905856,
+   8192,
+   12,
+   262144,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "instructions": 47
+ },
+ {
+  "slot": 3,
+  "name": "mandelbrot_zoom",
+  "file": "15_mandelbrot.psa",
+  "grid": 16,
+  "block": 32,
+  "fb": {
+   "addr": 4096,
+   "width": 32,
+   "height": 16
+  },
+  "params": [
+   4096,
+   -28781,
+   44951,
+   1434,
+   24,
+   262144,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "instructions": 47
+ }
+]

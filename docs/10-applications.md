@@ -1,6 +1,6 @@
-# 10. Applications: the 15 kernels
+# 10. Applications: the 16 kernels
 
-> **Part 4: Applications and graphics**, chapter 10 of 17. About 20 minutes.
+> **Part 4: Applications and graphics**, chapter 10 of 18. About 20 minutes.
 
 **In this chapter you will learn**
 
@@ -31,6 +31,7 @@ The three graphics kernels (13 to 15) get their own chapter, [11. Graphics](11-g
 | 13 | `gradient_shader` | the simplest pixel shader | one thread per pixel, `.fb` framebuffer, coalesced stores | 16,097 | 8,892 | 100% |
 | 14 | `triangle_raster` | drawing every 3D triangle | edge functions, barycentric color, predication instead of branches | 32,737 | 17,212 | 99% |
 | 15 | `mandelbrot` | fractals, data-dependent shaders | Q16.16 loop with per-lane exit: heavy divergence, min-PC reconvergence | 46,729 | 23,420 | 73% |
+| 16 | `matmul_cached` | the same matrix multiply on a GPU with a cache | `.cache 16`: a shared direct-mapped cache, 80% hit rate | | 2,687 | 99% |
 
 Kernels with a single block (03, 08, 09, 10) cannot use a second SM, so the cycle count is identical: parallel hardware only helps when there is parallel work. That is Amdahl's law in miniature.
 
@@ -98,6 +99,10 @@ Every bar is one warp instruction from schedule to writeback, recorded from the 
 ### 15 mandelbrot
 
 ![mandelbrot timeline](img/timeline-mandelbrot.svg)
+
+### 16 matmul cached
+
+![matmul_cached timeline](img/timeline-matmul_cached.svg)
 
 ## Writing your own
 

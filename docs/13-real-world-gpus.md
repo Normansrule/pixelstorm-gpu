@@ -1,6 +1,6 @@
 # 13. From Pixelstorm to a real GPU
 
-> **Part 5: Build on it**, chapter 13 of 17. About 15 minutes.
+> **Part 5: Build on it**, chapter 13 of 18. About 15 minutes.
 
 **In this chapter you will learn**
 

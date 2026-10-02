@@ -27,7 +27,8 @@ module ps_gpu_top #(
     parameter SMEM_WORDS = 256,
     parameter SMEM_BANKS = 8,
     parameter IMEM_AW    = 10,
-    parameter CONST_AW   = 4
+    parameter CONST_AW   = 4,
+    parameter CACHE_LINES = 0          // 0 = no cache (wires); otherwise a direct-mapped shared cache
 )(
     input  wire                     clk,
     input  wire                     rst,
@@ -110,13 +111,40 @@ module ps_gpu_top #(
     endgenerate
 
     // ---- global memory arbiter ---------------------------------------------------
+    wire                     a_req_valid;
+    wire [1:0]               a_req_op;
+    wire [31:0]              a_req_addr;
+    wire [LINE_WORDS-1:0]    a_req_wmask;
+    wire [LINE_WORDS*32-1:0] a_req_wdata;
+    wire                     a_resp_valid;
+    wire [LINE_WORDS*32-1:0] a_resp_rdata;
     ps_mem_arbiter #(.NUM_SMS(NUM_SMS), .LINE_WORDS(LINE_WORDS)) u_arb (
         .clk(clk), .rst(rst), .cycle(cycle),
         .sm_req_valid(req_valid), .sm_req_op(req_op), .sm_req_addr(req_addr),
         .sm_req_wmask(req_wmask), .sm_req_wdata(req_wdata),
         .sm_resp_valid(resp_valid), .sm_resp_rdata(resp_rdata),
-        .mem_req_valid(mem_req_valid), .mem_req_op(mem_req_op), .mem_req_addr(mem_req_addr),
-        .mem_req_wmask(mem_req_wmask), .mem_req_wdata(mem_req_wdata),
-        .mem_resp_valid(mem_resp_valid), .mem_resp_rdata(mem_resp_rdata)
+        .mem_req_valid(a_req_valid), .mem_req_op(a_req_op), .mem_req_addr(a_req_addr),
+        .mem_req_wmask(a_req_wmask), .mem_req_wdata(a_req_wdata),
+        .mem_resp_valid(a_resp_valid), .mem_resp_rdata(a_resp_rdata)
     );
+
+    // ---- optional shared cache between the arbiter and DRAM --------------------
+    generate
+        if (CACHE_LINES == 0) begin : g_nocache
+            assign mem_req_valid = a_req_valid;  assign mem_req_op    = a_req_op;
+            assign mem_req_addr  = a_req_addr;   assign mem_req_wmask = a_req_wmask;
+            assign mem_req_wdata = a_req_wdata;
+            assign a_resp_valid  = mem_resp_valid; assign a_resp_rdata = mem_resp_rdata;
+        end else begin : g_cache
+            ps_cache #(.LINES(CACHE_LINES), .LINE_WORDS(LINE_WORDS)) u_cache (
+                .clk(clk), .rst(rst), .cycle(cycle),
+                .up_req_valid(a_req_valid), .up_req_op(a_req_op), .up_req_addr(a_req_addr),
+                .up_req_wmask(a_req_wmask), .up_req_wdata(a_req_wdata),
+                .up_resp_valid(a_resp_valid), .up_resp_rdata(a_resp_rdata),
+                .dn_req_valid(mem_req_valid), .dn_req_op(mem_req_op), .dn_req_addr(mem_req_addr),
+                .dn_req_wmask(mem_req_wmask), .dn_req_wdata(mem_req_wdata),
+                .dn_resp_valid(mem_resp_valid), .dn_resp_rdata(mem_resp_rdata)
+            );
+        end
+    endgenerate
 endmodule

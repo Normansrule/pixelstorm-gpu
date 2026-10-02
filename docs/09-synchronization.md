@@ -1,6 +1,6 @@
 # 9. Synchronization: barriers, shuffles, votes, atomics
 
-> **Part 3: Performance**, chapter 9 of 17. About 20 minutes.
+> **Part 3: Performance**, chapter 9 of 18. About 20 minutes.
 
 **In this chapter you will learn**
 
@@ -73,4 +73,4 @@ Both read the old count, both add one, both store: one increment is lost. ATOM d
 
 ---
 
-[Previous: 8. Memory: coalescing and banks](08-memory.md) | [Course map](00-start-here.md) | [Next: 10. Applications: the 15 kernels](10-applications.md)
+[Previous: 8. Memory: coalescing and banks](08-memory.md) | [Course map](00-start-here.md) | [Next: 10. Applications: the 16 kernels](10-applications.md)

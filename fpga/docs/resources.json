@@ -1,0 +1,21 @@
+{
+ "core_nexys": {
+  "LUT": 30508,
+  "FF": 1807,
+  "DSP48E1": 80,
+  "BRAM36": 1
+ },
+ "core_nexys_before_banking": {
+  "LUT": 164482,
+  "FF": 26447,
+  "DSP48E1": 80
+ },
+ "note": "GPU core only, from yosys synth_xilinx -family xc7: Nexys A7 build = 1 SM, 4 warps x 8 lanes; Basys 3 build = 1 SM, 8 warps x 4 lanes; both 16 registers per thread. LUT includes distributed-RAM primitives (RAM64M/RAM32M, 4 LUTs each). The loader, VGA, UART and the 32 KB block-RAM global memory add about 9 RAMB36 and a few hundred LUTs. Vivado usually packs 10 to 30 percent tighter; its utilization.rpt from make fpga-bit is authoritative. Before the register file and shared memory were banked per lane, the Nexys core needed 164,482 LUTs and 26,447 flip-flops.",
+ "core_basys": {
+  "LUT": 15032,
+  "FF": 1377,
+  "DSP48E1": 40,
+  "BRAM36": 1
+ },
+ "tang_note": "Tang Nano 20K: not measured on the 4 GB build machine (Yosys synth_gowin ran out of memory). make fpga-tang prints Yosys's cell counts (build/fpga/tangnano20k/utilization.txt) and nextpnr's device utilisation; check them before loading the board."
+}

@@ -54,7 +54,7 @@ CH = [
   [('Guided tour, stops 7 to 9', V+'?tour')],
   [('Why does reduction_shuffle need no BAR?','All communication stays inside one warp and goes through registers (SHFL). The lanes of a warp execute in lockstep, so each shuffle sees the previous step\'s results.'),
    ('What goes wrong if two lanes update the same histogram bin with LDG, ADD, STG instead of ATOM?','Both read the old count, both add one, both store: one increment is lost. ATOM does the read-modify-write as one indivisible step.')]),
- (10,'10-applications.md','Applications: the 15 kernels',4,20,
+ (10,'10-applications.md','Applications: the 16 kernels',4,20,
   ['what each example kernel does and which hardware feature it exposes','how each kernel looks on the hardware (timelines from the RTL)','how to write, test and visualize your own kernel'],
   [('Visualizer: pick any kernel', V),('Command line: ./pixelstorm list', None)],
   [('Why is divergence exactly as fast on 2 SMs as on 1?','It launches a single block, and a block runs on one SM. The second SM has nothing to do.'),
@@ -81,9 +81,15 @@ CH = [
   [('Why does the tapeout configuration use 2 warps of 4 lanes and 8 registers instead of the simulated 4 x 8 x 16?','Every storage bit becomes a flip-flop (about 24 transistors) plus multiplexers to read it. A full-size register file with 24 read ports would be hundreds of thousands of cells. Real chips use dense SRAM macros for that; without them, the design has to shrink.'),
    ('In a standard cell, where exactly is a transistor?','Wherever a polysilicon line (red) crosses a diffusion region (green). The poly is the gate; the diffusion on either side is source and drain. Counting those crossings gives 4 for a NAND2 and 28 for a full adder.'),
    ('The layout has {fillers} extra tap, decap and filler cells. What are they for?','Taps tie the wells to power so the chip does not latch up; decaps are capacitors that steady the supply when many gates switch at once; fillers keep the rows continuous for manufacturing. A real flow inserts all three.')]),
- (15,'15-references.md','References',6,5,[],[],[]),
- (16,'16-glossary.md','Glossary',6,5,[],[],[]),
- (17,'17-troubleshooting.md','Troubleshooting',6,5,[],[],[]),
+ (15,'15-fpga.md','Pixelstorm on an FPGA',5,40,
+  ['how the same Verilog becomes a GPU running on a real FPGA board, drawing to a VGA monitor','why a register file written for simulation can need 164,000 FPGA LUTs, and how banking it per lane fixes that','how to build, load and run it on a Digilent Nexys A7-100T or Basys 3, and how the board simulation proves it works first'],
+  [('Board simulation: make fpga-sim', None),('Datasheet: fpga/docs/pixelstorm-fpga-datasheet.pdf', None)],
+  [('The FPGA version keeps global memory in block RAM with the same request/response protocol as the DRAM model. Why keep the protocol?','Because the GPU does not change at all: ps_gpu_top talks to "memory" through one port, so swapping the testbench DRAM for block RAM (or for real DDR later) needs no change inside the GPU.'),
+   ('Mandelbrot takes 46,216 cycles on the board. How long is that at 25 MHz, and why is there a slow-motion switch?','About 1.8 milliseconds: faster than one video frame. Slowing the GPU clock to 1/1024 stretches it to about 1.9 seconds, so you can watch the warps paint.'),
+   ('Why does splitting the register file per lane not change any result?','Lane g only ever reads and writes the registers of threads w*WARP_SIZE+g. Giving each lane its own bank keeps every access identical; ./pixelstorm test proves it cycle for cycle.')]),
+ (16,'16-references.md','References',6,5,[],[],[]),
+ (17,'17-glossary.md','Glossary',6,5,[],[],[]),
+ (18,'18-troubleshooting.md','Troubleshooting',6,5,[],[],[]),
 ]
 PART = {1:'Part 1: Concepts',2:'Part 2: The hardware',3:'Part 3: Performance',4:'Part 4: Applications and graphics',5:'Part 5: Build on it',6:'Appendix'}
 

@@ -1,0 +1,72 @@
+{
+ "version": "1.5",
+ "runs": [
+  {
+   "slot": 0,
+   "name": "gradient_shader",
+   "cycles": 15072,
+   "uart": "PIXELSTORM k=0 cycles=00003AE0",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 1,
+   "name": "triangle_raster",
+   "cycles": 31712,
+   "uart": "PIXELSTORM k=1 cycles=00007BE0",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 2,
+   "name": "mandelbrot",
+   "cycles": 46216,
+   "uart": "PIXELSTORM k=2 cycles=0000B488",
+   "pixels": 512,
+   "result": "PASS"
+  },
+  {
+   "slot": 3,
+   "name": "mandelbrot_zoom",
+   "cycles": 79461,
+   "uart": "PIXELSTORM k=3 cycles=00013665",
+   "pixels": 512,
+   "result": "PASS"
+  }
+ ],
+ "runs_tang": [
+  {
+   "slot": 0,
+   "name": "gradient_shader",
+   "cycles": 55904,
+   "uart": "PIXELSTORM k=0 cycles=0000DA60",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 1,
+   "name": "triangle_raster",
+   "cycles": 122464,
+   "uart": "PIXELSTORM k=1 cycles=0001DE60",
+   "pixels": 1024,
+   "result": "PASS"
+  },
+  {
+   "slot": 2,
+   "name": "mandelbrot",
+   "cycles": 154252,
+   "uart": "PIXELSTORM k=2 cycles=00025A8C",
+   "pixels": 512,
+   "result": "PASS"
+  },
+  {
+   "slot": 3,
+   "name": "mandelbrot_zoom",
+   "cycles": 254127,
+   "uart": "PIXELSTORM k=3 cycles=0003E0AF",
+   "pixels": 512,
+   "result": "PASS"
+  }
+ ],
+ "tmds": "PASS: 24000 TMDS symbols decode exactly; running disparity stays within +/-8"
+}

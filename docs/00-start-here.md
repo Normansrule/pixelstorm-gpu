@@ -1,6 +1,6 @@
 # Pixelstorm: a GPU you can watch paint
 
-> **Course map.** Start here. The whole course takes about 5 hours; after Part 1, each chapter stands on its own.
+> **Course map.** Start here. The whole course takes about 6 hours; after Part 1, each chapter stands on its own.
 
 ![Three images rendered by the Pixelstorm Verilog](img/fig-gallery.svg)
 
@@ -47,7 +47,7 @@ Pixelstorm is a small but complete GPU (Graphics Processing Unit) written in Ver
 
 | Chapter | Time | You will learn |
 |---|---|---|
-| [10. Applications: the 15 kernels](10-applications.md) | 20 min | What each example kernel does and which hardware feature it exposes |
+| [10. Applications: the 16 kernels](10-applications.md) | 20 min | What each example kernel does and which hardware feature it exposes |
 | [11. Graphics: pixels, triangles and fractals](11-graphics.md) | 30 min | Why "one thread per pixel" is the reason GPUs exist |
 
 ### Part 5: Build on it
@@ -57,14 +57,15 @@ Pixelstorm is a small but complete GPU (Graphics Processing Unit) written in Ver
 | [12. Make it better](12-make-it-better.md) | 30 min | Nine concrete improvements, each one a real idea in commercial GPUs |
 | [13. From Pixelstorm to a real GPU](13-real-world-gpus.md) | 15 min | How to recognize the parts on a real graphics card and in a die photo |
 | [14. From Verilog to silicon](14-silicon.md) | 35 min | How the same Verilog becomes {cells} real SkyWater 130 nm standard cells and {mtr} million transistors |
+| [15. Pixelstorm on an FPGA](15-fpga.md) | 40 min | How the same Verilog becomes a GPU running on a real FPGA board, drawing to a VGA monitor |
 
 ### Appendix
 
 | Chapter | Time | You will learn |
 |---|---|---|
-| [15. References](15-references.md) | 5 min |  |
-| [16. Glossary](16-glossary.md) | 5 min |  |
-| [17. Troubleshooting](17-troubleshooting.md) | 5 min |  |
+| [16. References](16-references.md) | 5 min |  |
+| [17. Glossary](17-glossary.md) | 5 min |  |
+| [18. Troubleshooting](18-troubleshooting.md) | 5 min |  |
 
 ## How each chapter is laid out
 

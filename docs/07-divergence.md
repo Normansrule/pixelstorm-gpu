@@ -1,6 +1,6 @@
 # 7. Divergence and reconvergence
 
-> **Part 3: Performance**, chapter 7 of 17. About 20 minutes.
+> **Part 3: Performance**, chapter 7 of 18. About 20 minutes.
 
 **In this chapter you will learn**
 

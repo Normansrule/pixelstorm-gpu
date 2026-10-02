@@ -73,5 +73,10 @@
   "name": "mandelbrot",
   "file": "mandelbrot.json",
   "cycles": 23420
+ },
+ {
+  "name": "matmul_cached",
+  "file": "matmul_cached.json",
+  "cycles": 2687
  }
 ]

@@ -1,6 +1,6 @@
 # 6. Reading the RTL
 
-> **Part 2: The hardware**, chapter 6 of 17. About 30 minutes.
+> **Part 2: The hardware**, chapter 6 of 18. About 30 minutes.
 
 **In this chapter you will learn**
 
@@ -23,11 +23,11 @@ Keep the [SM internals figure](img/fig-sm-internals.svg) open beside the code; e
 | 1 | `rtl/ps_defines.vh` | 106 | opcode numbers and field constants; the vocabulary for everything else |
 | 2 | `rtl/ps_decoder.v` | 81 | how a 32-bit word becomes control signals (pure wiring plus one case statement) |
 | 3 | `rtl/ps_alu.v` | 81 | one lane's arithmetic; the SM instantiates it 8 times |
-| 4 | `rtl/ps_sm.v` | 544 | the Streaming Multiprocessor: the heart of the design, read in the order below |
+| 4 | `rtl/ps_sm.v` | 581 | the Streaming Multiprocessor: the heart of the design, read in the order below |
 | 5 | `rtl/ps_mem_arbiter.v` | 96 | how two SMs share one DRAM port |
 | 6 | `rtl/ps_dispatcher.v` | 60 | how thread blocks are handed to idle SMs |
-| 7 | `rtl/ps_gpu_top.v` | 123 | wiring, instruction memory and the constant bank |
-| 8 | `sim/tb_gpu.v` | 173 | the testbench: host driver, DRAM model, trace and waveform switches |
+| 7 | `rtl/ps_gpu_top.v` | 151 | wiring, instruction memory and the constant bank |
+| 8 | `sim/tb_gpu.v` | 174 | the testbench: host driver, DRAM model, trace and waveform switches |
 
 ## Conventions used in every file
 
@@ -42,16 +42,16 @@ Keep the [SM internals figure](img/fig-sm-internals.svg) open beside the code; e
 
 Registers that survive between instructions: the register file `rf`, predicates `preds`, the private PC of every thread `lpc`, exit flags `ldone`, warp flags `w_valid` and `w_wait`, shared memory `smem`, and the round-robin pointer `rr_ptr`. Everything else in the SM is recomputed every cycle from these.
 
-### 2. Decode ([`rtl/ps_sm.v` line 118](../rtl/ps_sm.v#L118))
+### 2. Decode ([`rtl/ps_sm.v` line 121](../rtl/ps_sm.v#L121))
 
 An instance of `ps_decoder` turns the instruction register `ir` into `d_` signals: opcode, register numbers, immediates, and flags such as `d_load`, `d_store`, `d_shared`, `d_atom`.
 
-### 3. Warp status and the scheduler ([`rtl/ps_sm.v` line 139](../rtl/ps_sm.v#L139))
+### 3. Warp status and the scheduler ([`rtl/ps_sm.v` line 142](../rtl/ps_sm.v#L142))
 
 This is where SIMT scheduling and divergence handling live. First, for every warp, the minimum PC over its live lanes:
 
 ```verilog
-// rtl/ps_sm.v, lines 144-156
+// rtl/ps_sm.v, lines 147-159
     always @* begin
         for (i = 0; i < NUM_WARPS; i = i + 1) begin
             w_done[i] = 1'b1;
@@ -70,14 +70,14 @@ This is where SIMT scheduling and divergence handling live. First, for every war
 Then the barrier condition: some live warp is waiting, and no live warp is still running.
 
 ```verilog
-// rtl/ps_sm.v, lines 160-160
+// rtl/ps_sm.v, lines 163-163
     wire                 bar_release = (|(live & w_wait)) && ((live & ~w_wait) == {NUM_WARPS{1'b0}});
 ```
 
 Finally the pick: the first eligible warp at or after `rr_ptr`, and its **active mask**, the lanes whose PC equals the warp's minimum PC. This one comparison is the whole min-PC reconvergence scheme ([chapter 7](07-divergence.md)).
 
 ```verilog
-// rtl/ps_sm.v, lines 162-178
+// rtl/ps_sm.v, lines 165-181
     reg            found;
     reg [WW-1:0]   pick;
     reg [WARP_SIZE-1:0] pick_act;
@@ -97,20 +97,20 @@ Finally the pick: the first eligible warp at or after `rr_ptr`, and its **active
     end
 ```
 
-### 4. The lanes ([`rtl/ps_sm.v` line 181](../rtl/ps_sm.v#L181))
+### 4. The lanes ([`rtl/ps_sm.v` line 184](../rtl/ps_sm.v#L184))
 
 A `generate` loop creates `WARP_SIZE` copies of the register read, guard evaluation, `ps_alu`, next-PC and address logic. Each lane sees the same decoded instruction and its own registers. The guard (`@P0`) turns the active mask into the **execution mask** `cexe`.
 
-### 5. Cross-lane units ([`rtl/ps_sm.v` line 240](../rtl/ps_sm.v#L240) and [`rtl/ps_sm.v` line 259](../rtl/ps_sm.v#L259))
+### 5. Cross-lane units ([`rtl/ps_sm.v` line 250](../rtl/ps_sm.v#L250) and [`rtl/ps_sm.v` line 269](../rtl/ps_sm.v#L269))
 
 The only places where one lane reads another lane's data. `SHFL` is a multiplexer per lane choosing a source lane (`shfl_y`); `VOTE` reduces one predicate bit per lane into ANY, ALL or a BALLOT mask.
 
-### 6. Load/store unit ([`rtl/ps_sm.v` line 277](../rtl/ps_sm.v#L277))
+### 6. Load/store unit ([`rtl/ps_sm.v` line 287](../rtl/ps_sm.v#L287))
 
 Coalescing in a few lines: take the lowest pending lane as the leader, compute its line, and serve every pending lane in the same line.
 
 ```verilog
-// rtl/ps_sm.v, lines 302-309
+// rtl/ps_sm.v, lines 312-319
         line_base = r_addr[leader*32 +: 32] & ~(LINE_WORDS - 1);
         g_wmask   = {LINE_WORDS{1'b0}};
         g_wdata   = {LINE_WORDS*32{1'b0}};
@@ -124,7 +124,7 @@ Coalescing in a few lines: take the lowest pending lane as the leader, compute i
 Shared-memory bank resolution: at most one address per bank per cycle, except that lanes asking for the *same* word share it.
 
 ```verilog
-// rtl/ps_sm.v, lines 315-330
+// rtl/ps_sm.v, lines 325-340
         bank_used = {SMEM_BANKS{1'b0}};
         bank_addr = {SMEM_BANKS*SMEM_AW{1'b0}};
         for (j = 0; j < WARP_SIZE; j = j + 1) begin
@@ -143,19 +143,19 @@ Shared-memory bank resolution: at most one address per bank per cycle, except th
                 end
 ```
 
-### 7. The control FSM ([`rtl/ps_sm.v` line 353](../rtl/ps_sm.v#L353))
+### 7. The control FSM ([`rtl/ps_sm.v` line 394](../rtl/ps_sm.v#L394))
 
 One `case (state)`. Read the states in order; each is short:
 
 | State | Line | What it latches |
 |---|---|---|
-| IDLE | 375 | on `blk_start`: block id, all lane PCs to 0, lanes beyond the block size marked done |
-| SCHED | 394 | barrier release, block completion, or the picked warp: `cw`, `cpc`, `cact` |
-| FETCH | 416 | `ir <= imem[cpc]` |
-| DECODE | 422 | execution mask `cexe` from the guard |
-| EXEC | 428 | every lane's result, address, store data and next PC into `r_` registers |
-| MEM | 444 | one bank pass or one global transaction per visit, clearing bits of `lpend` |
-| WB | 502 | registers, predicates, `lpc`, `ldone`, `w_wait` on `BAR`, advance `rr_ptr` |
+| IDLE | 416 | on `blk_start`: block id, all lane PCs to 0, lanes beyond the block size marked done |
+| SCHED | 435 | barrier release, block completion, or the picked warp: `cw`, `cpc`, `cact` |
+| FETCH | 457 | `ir <= imem[cpc]` |
+| DECODE | 463 | execution mask `cexe` from the guard |
+| EXEC | 469 | every lane's result, address, store data and next PC into `r_` registers |
+| MEM | 485 | one bank pass or one global transaction per visit, clearing bits of `lpend` |
+| WB | 541 | registers, predicates, `lpc`, `ldone`, `w_wait` on `BAR`, advance `rr_ptr` |
 
 ## Exercises while reading
 

@@ -1,6 +1,6 @@
 # 8. Memory: coalescing and banks
 
-> **Part 3: Performance**, chapter 8 of 17. About 25 minutes.
+> **Part 3: Performance**, chapter 8 of 18. About 25 minutes.
 
 **In this chapter you will learn**
 
@@ -80,6 +80,32 @@ The classic fix is padding: store a 2D tile as `s[row*9 + col]` instead of `s[ro
 
 - In the visualizer the load/store unit box says "2 transactions" and each lane shows "serving #1" or "queued #2". For shared memory the bank row lights up and conflicting banks turn magenta.
 - Run `node tools/pixelstorm.js rtl kernels/08_coalescing.psa --lat 100` and compare the three loads.
+
+
+## A real cache (rtl/ps_cache.v)
+
+Pixelstorm can be built with a small shared cache between the memory arbiter and DRAM: direct-mapped, 16 lines of 4 words, write-through. It is off by default (`CACHE_LINES = 0` turns it into plain wires, so every other number in this course is unchanged) and switched on per kernel with `.cache 16`, or for any run with `--cache 16`:
+
+```bash
+./pixelstorm rtl matmul                 # 3,567 cycles
+./pixelstorm rtl matmul --cache 16      # 2,687 cycles, 80% of loads hit
+./pixelstorm test                       # every kernel also runs on the cached GPU, cycle-exact
+```
+
+![Cycles and DRAM trips with and without the cache](img/fig-cache.svg)
+
+How it decides, for each request the arbiter lets through:
+
+| Request | Line in the cache? | What happens | Cost |
+|---|---|---|---|
+| read | yes (hit) | answer from the cache | next cycle, DRAM untouched |
+| read | no (miss) | fetch the line from DRAM, keep a copy, answer | DRAM latency plus one hop |
+| write | either | write to DRAM (write-through); update the copy if present | DRAM latency plus one hop |
+| atomic | either | do it in DRAM; drop the copy so it cannot go stale | DRAM latency plus one hop |
+
+The address picks the line: the low 2 bits are the word within a 4-word line, the next 4 bits choose one of 16 lines, and the rest is the **tag** stored beside the line to recognise it later. Two addresses with the same middle bits evict each other: a conflict miss, the cache version of a bank conflict.
+
+In the 3D explorer, kernel 16 (`matmul_cached`) shows it working: green packets hit and turn around at the cache, amber ones still travel to DRAM. Real GPUs go further: an L1 per SM (about 30 cycles), a shared L2 of tens of megabytes (about 200 cycles), write-back policies and many misses in flight at once.
 
 <!-- chapter-footer -->
 

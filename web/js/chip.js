@@ -143,10 +143,20 @@
   function ghost(w, h, d, x, y, z, parent, text) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), ghostMat()); m.position.set(x, y, z); (parent || scene).add(m);
     const e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineDashedMaterial({ color: COL.cyan, dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.9 }));
-    e.computeLineDistances(); m.add(e); m.visible = false; ghosts.push(m); label(m, text, h / 2 + 1); return m;
+    e.computeLineDistances(); m.add(e); m.visible = false; ghosts.push(m); label(m, text, h / 2 + 1); m.userData.lbl = labels[labels.length - 1].el; m.userData.glowColor = new THREE.Color(COL.cyan); m.userData.glow = 0; m.userData.glowT = 0; return m;
   }
   const L1 = [0, 1].map(s => ghost(8, 1.0, 3.0, -3.4, 2.6, 6.6, SM[s].g, `L1 cache (real GPUs only)`));
   const L2 = ghost(8, 1.6, 10, 0, TOP + 3.8, 8, null, 'L2 cache (real GPUs only)');
+  glowers.push(L2);
+  let cacheAt = new Map();                                     // "cycle:address" -> 1 hit / 0 miss, from the trace
+  const hasCache = () => !!(R && R.meta.cacheLines > 0);
+  function syncCache(tourCaches) {
+    const on = hasCache();
+    L2.visible = on || !!tourCaches;
+    L2.material.opacity = on ? 0.5 : 0.18; L2.material.color.setHex(on ? COL.amber : COL.cyan);
+    L2.userData.lbl.textContent = on ? `Shared cache, ${R.meta.cacheLines} lines (rtl/ps_cache.v)` : 'L2 cache (real GPUs only)';
+    L1.forEach(g => { g.visible = !!tourCaches; });
+  }
 
   // ---------------------------------------------------------------------------
   // what each block is (info panel)
@@ -204,6 +214,8 @@
     fbTex.dispose(); fbTex.needsUpdate = true;
     $('cycMax').textContent = `/ ${R.end.toLocaleString('en-US')}`; $('scrub').max = R.end;
     $('tPxL').textContent = fb ? 'pixels painted' : 'words written';
+    cacheAt = new Map(); for (const e of R.events) if (e.ev === 'cache') cacheAt.set(`${e.t}:${e.a}`, e.hit);
+    syncCache(tourIdx >= 0 && TOUR[tourIdx] && TOUR[tourIdx].caches);
     buildSpark();
     const smc = $('smCards'); smc.innerHTML = '';
     for (let s = 0; s < R.meta.numSms; s++) {
@@ -296,7 +308,19 @@
     let pi = 0; const lat = m.lat + 1;
     const lo = lowerBound(R.mreqs, Tf - lat - 1);
     for (let i = lo; i < R.mreqs.length && R.mreqs[i].t <= Tf && pi < particles.length; i++) {
-      const q = R.mreqs[i]; const f = (Tf - q.t) / lat; if (f < 0 || f > 1) continue;
+      const q = R.mreqs[i];
+      const hit = cacheAt.get(`${q.t + 1}:${q.a}`) === 1;
+      if (hit) {                                                 // cache hit: arbiter -> cache -> back, a few cycles
+        const f = (Tf - q.t) / 3; if (f < 0 || f > 1) continue;
+        L2.userData.glowColor.setHex(COL.green); L2.userData.glowT = 1.6; arb.userData.glowT = 1.2;
+        const lsuPos = new THREE.Vector3(); SM[q.sm].lsu.getWorldPosition(lsuPos); lsuPos.y += 0.8;
+        const arbPos = new THREE.Vector3(0, TOP + 1.2, 8), l2Pos = new THREE.Vector3(0, TOP + 3.8, 8);
+        const p = particles[pi++]; p.visible = true; p.material.color.setHex(COL.green);
+        p.position.copy(f < 0.3 ? lsuPos.clone().lerp(arbPos, f / 0.3) : f < 0.5 ? arbPos.clone().lerp(l2Pos, (f - 0.3) / 0.2) : l2Pos.clone().lerp(lsuPos, (f - 0.5) / 0.5));
+        continue;
+      }
+      if (hasCache() && q.op === 0) { L2.userData.glowColor.setHex(COL.amber); L2.userData.glowT = Math.max(L2.userData.glowT, 0.8); }
+      const f = (Tf - q.t) / lat; if (f < 0 || f > 1) continue;
       const k = (q.a >> 2) & 3; const trc = traces[k];
       arb.userData.glowT = 1.4; DRAM[k].userData.glowT = f > 0.3 && f < 0.85 ? 1.2 : 0.4; trc.mesh.material.opacity = 0.55;
       const lsuPos = new THREE.Vector3(); SM[q.sm].lsu.getWorldPosition(lsuPos); lsuPos.y += 0.8;
@@ -538,10 +562,13 @@
       flows: () => SM[0].banks.map((b, i) => A(wp(b, 0.5), wp(SM[0].lanes[i % 4], 1.2), COL.amber, 1, 2)),
       text: 'Threads in the same block can share data through a small, fast on-chip memory split into banks. Each bank serves one word per cycle, so threads that hit different banks are served together; threads that collide on one bank must take turns (a bank conflict).',
       real: 'On NVIDIA hardware this is the same SRAM as the L1 cache, split between the two as the program asks.' },
-    { title: 'Loading from DRAM, and where the caches would be', cam: { theta: 0.45, phi: 0.95, r: 70, tx: 0, ty: 3, tz: 4 }, focus: () => [SM[0].lsu, arb, DRAM[2]], mem: ['dram', 'l1', 'l2'], caches: true,
+    { title: 'Loading from DRAM, and where caches go', cam: { theta: 0.45, phi: 0.95, r: 70, tx: 0, ty: 3, tz: 4 }, focus: () => [SM[0].lsu, arb, DRAM[2]], mem: ['dram', 'l1', 'l2'], caches: true,
       flows: () => [A(wp(SM[0].lsu, 0.8), wp(arb, 0.8), COL.amber, 2, 3), A(wp(arb, 0.8), wp(DRAM[2], 1.2), COL.amber, 2, 5), A(wp(DRAM[2], 1.2), wp(SM[0].lsu, 0.8), COL.green, 2, 7)],
-      text: 'A load like LDG must leave the SM. The load/store unit groups the lanes\' addresses into as few 4-word requests as possible (coalescing), the memory arbiter lets one SM at a time through, and DRAM answers after a delay. Pixelstorm has no cache: every load goes all the way to DRAM. The glass boxes show where a real GPU would check an L1 and then an L2 cache first.',
+      text: 'A load like LDG must leave the SM. The load/store unit groups the lanes\' addresses into as few 4-word requests as possible (coalescing), the memory arbiter lets one SM at a time through, and DRAM answers after a delay. In this configuration Pixelstorm has no cache, so every load goes all the way to DRAM. The glass boxes show where a real GPU checks an L1 and then an L2 cache first; the next stop turns one of them into real hardware.',
       real: 'On an H100 a DRAM trip costs around 500 cycles; an L1 hit costs about 30. Caches and many waiting warps are how GPUs hide that gap.' },
+    { title: 'A real cache: the same program, 25% faster', kernel: 'matmul_cached', play: true, cam: { theta: 0.35, phi: 0.9, r: 62, tx: 0, ty: 4, tz: 6 }, focus: () => [L2, arb], mem: ['l2', 'dram'],
+      text: 'Pixelstorm can also be built with a small cache between the arbiter and DRAM (rtl/ps_cache.v, 16 lines). This is kernel 16, the matrix multiply again, running on that GPU. Watch the packets: green ones hit the cache and turn straight back; amber ones still travel to DRAM. About 80% of loads hit, and the whole kernel finishes in 2,687 cycles instead of 3,567.',
+      real: 'The catch: a program that never reuses data gets slightly slower, because every access pays for the extra hop. That is why CUDA lets programs choose how to use L1 and shared memory.' },
     { title: 'Writeback: save the result', cam: { theta: 0.3, phi: 0.62, r: 28, tx: -9, ty: 2, tz: 4 }, focus: () => [SM[0].wb, SM[0].rf], mem: ['reg'],
       flows: () => SM[0].lanes.map(l => A(wp(l, 1.2), wp(SM[0].rf, 0.6), COL.green, 1, 2.5)),
       text: 'Finally each lane writes its answer back into its own register, and every lane\'s program counter moves on. The scheduler is free to pick the next warp, and the cycle starts again: schedule, fetch, decode, execute, memory, writeback.',
@@ -568,7 +595,7 @@
     $('tLadderWrap').hidden = !st.mem;
     $('tPrev').disabled = tourIdx === 0; $('tNext').textContent = tourIdx === TOUR.length - 1 ? 'Finish' : 'Next';
     $('tDots').innerHTML = TOUR.map((_, k) => `<b class="${k <= tourIdx ? 'on' : ''}"></b>`).join('');
-    ghosts.forEach(g => { g.visible = !!st.caches; });
+    syncCache(st.caches);
     const go = () => {
       if (st.end && R) { Tf = T = R.end; }
       playing = !!st.play; $('bPlay').textContent = playing ? 'Pause' : 'Play';
@@ -579,7 +606,7 @@
     if (st.kernel && R && R.meta.kernel !== st.kernel) { $('kSel').value = st.kernel; load(st.kernel).then(go); } else go();
     clearTimeout(tourTimer); if (tourAuto) tourTimer = setTimeout(() => tourShow(tourIdx + 1 >= TOUR.length ? 0 : tourIdx + 1), 11000);
   }
-  function tourClose() { tourIdx = -1; tourEl.hidden = true; $('info').hidden = false; ghosts.forEach(g => { g.visible = false; }); tourPackets.forEach(p => { p.visible = false; }); clearTimeout(tourTimer); lastInput = performance.now(); lastScreenT = -1; }
+  function tourClose() { tourIdx = -1; tourEl.hidden = true; $('info').hidden = false; syncCache(false); tourPackets.forEach(p => { p.visible = false; }); clearTimeout(tourTimer); lastInput = performance.now(); lastScreenT = -1; }
   $('tNext').onclick = () => { if (tourIdx >= TOUR.length - 1) tourClose(); else tourShow(tourIdx + 1); };
   $('tPrev').onclick = () => tourShow(tourIdx - 1);
   $('tClose').onclick = tourClose;

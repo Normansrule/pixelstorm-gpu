@@ -1,6 +1,6 @@
 # 12. Make it better
 
-> **Part 5: Build on it**, chapter 12 of 17. About 30 minutes.
+> **Part 5: Build on it**, chapter 12 of 18. About 30 minutes.
 
 **In this chapter you will learn**
 
@@ -36,6 +36,8 @@ While a warp waits in MEM, the whole SM waits. Let the scheduler issue other war
 
 ## 3. Add a cache
 
+> **Started in v1.3:** `rtl/ps_cache.v` is a working shared, direct-mapped, write-through cache (chapter 8). Extend it: make it set-associative, add an L1 per SM, try write-back, or let several misses be in flight at once, and measure each change with `./pixelstorm test`.
+
 Add a small direct-mapped L1 data cache in front of the arbiter. `07_matmul` re-reads the same `A` row eight times; watch hit rate and cycles fall. Then think about coherence: what happens when two SMs cache the same line and one writes it? (Real GPUs mostly sidestep this: L1 is write-through and not coherent, and the L2 is shared.)
 
 ## 4. Real floating point
@@ -53,7 +55,7 @@ Add `ATOM.MAX`, `ATOM.CAS` (compare-and-swap) and a `MEMBAR` fence. With CAS you
 ## 7. Better divergence handling
 
 - Implement a reconvergence stack with explicit `SSY`/`SYNC` instructions and compare SIMD efficiency with min-PC on `03_divergence`.
-- Research direction: dynamic warp formation or thread block compaction (see [15-references.md](15-references.md)).
+- Research direction: dynamic warp formation or thread block compaction (see [16-references.md](16-references.md)).
 
 ## 8. Several blocks per SM
 

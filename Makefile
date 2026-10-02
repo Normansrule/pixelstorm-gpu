@@ -3,7 +3,7 @@ KERNEL ?= kernels/01_vector_add.psa
 PORT   ?= 8000
 
 
-.PHONY: silicon gds record docs site help setup test test1 lint synth wave run sim traces bundle figures isa serve all clean
+.PHONY: fpga-gen fpga-sim fpga-tang fpga-bit fpga-prog fpga-datasheet silicon gds record docs site help setup test test1 lint synth wave run sim traces bundle figures isa serve all clean
 
 help:
 	@echo "make setup    install tools (Ubuntu / WSL2)"
@@ -19,6 +19,9 @@ help:
 	@echo "make all      test, traces, figures, docs"
 	@echo "make serve    home, 3D chip, visualizer and labs at http://localhost:$(PORT)"
 	@echo "make record   record the 3D explorer into docs/img/chip.gif"
+	@echo "make fpga-sim  simulate the FPGA board: VGA frames checked pixel by pixel"
+	@echo "make fpga-bit BOARD=nexys_a7|basys3   bitstream with Vivado; make fpga-prog to load it"
+	@echo "make fpga-tang  Tang Nano 20K: open-source build and load (OSS CAD Suite)"
 	@echo "make silicon  synthesize to SkyWater 130 nm, place, write GDS, render with KLayout"
 	@echo "make gds      open the layout in KLayout"
 
@@ -66,6 +69,40 @@ bundle:
 
 isa:
 	./pixelstorm isa-md
+
+BOARD ?= nexys_a7
+OFL_BOARD_nexys_a7 = nexys_a7_100
+OFL_BOARD_basys3   = basys3
+
+fpga-gen:               ## assemble the demo kernels into the loader ROM (fpga/gen)
+	node fpga/gen_programs.js
+
+fpga-sim: fpga-gen      ## simulate the FPGA boards: every kernel on both GPU shapes, VGA frames pixel-checked, TMDS round trip
+	mkdir -p build/fpga
+	iverilog -g2012 -o build/fpga/tb_tmds.vvp fpga/sim/tb_tmds.v fpga/rtl/ps_tmds_enc.v
+	vvp -n build/fpga/tb_tmds.vvp | tee build/fpga/tmds.log | grep -E "PASS|FAIL"
+	iverilog -g2012 -I rtl -o build/fpga/tb_fpga.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v
+	iverilog -g2012 -I rtl -Ptb_fpga.NW=16 -Ptb_fpga.WS=2 -Ptb_fpga.SB=2 -o build/fpga/tb_fpga_tn.vvp fpga/sim/tb_fpga.v fpga/rtl/*.v rtl/ps_*.v
+	@for s in 0 1 2 3; do \
+	  vvp -n build/fpga/tb_fpga.vvp +sel=$$s +ppm=build/fpga/frame$$s.ppm > build/fpga/sim$$s.log; \
+	  grep -a "PIXELSTORM" build/fpga/sim$$s.log | tr -d '\r'; \
+	  node fpga/sim/check.js $$s build/fpga/frame$$s.ppm || exit 1; \
+	  vvp -n build/fpga/tb_fpga_tn.vvp +sel=$$s +ppm=build/fpga/tn$$s.ppm > build/fpga/tn$$s.log; \
+	  node fpga/sim/check.js $$s build/fpga/tn$$s.ppm 16 2 | sed 's/^/tang nano 20k shape: /' || exit 1; done
+	python3 fpga/sim/ppm2png.py
+	python3 fpga/sim/report.py
+
+fpga-tang: fpga-gen     ## Tang Nano 20K: open-source build (Yosys, nextpnr-himbaechel, gowin_pack) and load
+	bash fpga/boards/tangnano20k/build.sh
+
+fpga-bit: fpga-gen      ## bitstream with Vivado: make fpga-bit BOARD=nexys_a7 (or basys3)
+	vivado -mode batch -nojournal -nolog -source fpga/vivado/build.tcl -tclargs $(BOARD)
+
+fpga-prog:              ## load the bitstream over USB with openFPGALoader
+	openFPGALoader -b $(OFL_BOARD_$(BOARD)) build/fpga/$(BOARD)/pixelstorm_$(BOARD).bit
+
+fpga-datasheet:         ## regenerate fpga/docs/pixelstorm-fpga-datasheet.pdf
+	python3 fpga/docs/datasheet.py
 
 silicon:                ## RTL -> sky130 gates -> placed GDS -> KLayout pictures
 	bash tools/silicon/fetch_pdk.sh

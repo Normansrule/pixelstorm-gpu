@@ -1,6 +1,6 @@
-# 15. References
+# 16. References
 
-> **Appendix**, chapter 15 of 17. About 5 minutes.
+> **Appendix**, chapter 16 of 18. About 5 minutes.
 
 ---
 
@@ -41,6 +41,16 @@ Everything here is in English. Official documentation first, then open-source GP
 - NVIDIA, "Volta" (V100) architecture whitepaper, 2017: Independent Thread Scheduling.
 - V. Narasiman et al., "Improving GPU Performance via Large Warps and Two-Level Warp Scheduling", MICRO 2011.
 
+## FPGA boards
+
+| Resource | Why | Link |
+|---|---|---|
+| Digilent Nexys A7 reference manual and schematic | the primary Pixelstorm-F board | <https://digilent.com/reference/programmable-logic/nexys-a7/reference-manual> |
+| Digilent Basys 3 reference manual and schematic | the smaller board | <https://digilent.com/reference/programmable-logic/basys-3/reference-manual> |
+| Digilent master constraint (XDC) files | pin names used in `fpga/boards/` | <https://github.com/Digilent/digilent-xdc> |
+| AMD 7 Series data sheets DS180 and DS181; user guides UG472, UG473, UG474, UG479 | clocking, block RAM, LUTs and distributed RAM, DSP slices | <https://docs.amd.com> |
+| openFPGALoader | open-source tool that loads bitstreams over USB | <https://github.com/trabucayre/openFPGALoader> |
+
 ## Silicon and layout
 
 | Resource | Why | Link |
@@ -66,4 +76,4 @@ Everything here is in English. Official documentation first, then open-source GP
 
 ---
 
-[Previous: 14. From Verilog to silicon](14-silicon.md) | [Course map](00-start-here.md) | [Next: 16. Glossary](16-glossary.md)
+[Previous: 15. Pixelstorm on an FPGA](15-fpga.md) | [Course map](00-start-here.md) | [Next: 17. Glossary](17-glossary.md)

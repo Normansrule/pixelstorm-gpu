@@ -93,7 +93,7 @@
   const DEFAULT_CFG = {
     numSms: 2, numWarps: 4, warpSize: 8, numRegs: 16, lineWords: 4,
     smemWords: 256, smemBanks: 8, imemWords: 1024, constWords: 16,
-    gmemWords: 65536, lat: 8,
+    gmemWords: 65536, lat: 8, cacheLines: 0,
   };
 
   // ---------------------------------------------------------------------------
@@ -159,7 +159,7 @@
     const lines = src.split(/\r?\n/);
     const symbols = {};
     for (let k = 0; k < SR.length; k++) { symbols[SR[k]] = k; symbols['SR_' + SR[k]] = k; symbols['%' + SR[k]] = k; }
-    const config = { name: 'kernel', grid: 1, block: 8, params: new Array(16).fill(0), data: [], dump: [], lat: null, sms: null, notes: [], fb: null };
+    const config = { name: 'kernel', grid: 1, block: 8, params: new Array(16).fill(0), data: [], dump: [], lat: null, sms: null, notes: [], fb: null, cache: null };
     const insts = [];   // {line, guard, mnem, suffix, ops, text}
     const labels = {};
 
@@ -187,6 +187,7 @@
           case '.grid': config.grid = nums()[0]; break;
           case '.block': config.block = nums()[0]; break;
           case '.lat': config.lat = nums()[0]; break;
+          case '.cache': config.cache = nums()[0]; break;   // shared cache lines (power of two), 0 = none
           case '.sms': config.sms = nums()[0]; break;
           case '.equ': case '.set': {
             const mm = args.match(/^([A-Za-z_][\w]*)\s*[, =]\s*(.+)$/);
@@ -486,6 +487,11 @@
       const disp = { running: 1, done: 0, next: 0, start: new Array(c.numSms).fill(0), blkId: 0 };
       const arb = { busy: 0, owner: 0, rr: 0, reqValid: 0, req: null };
       const mem = { pend: 0, cnt: 0, req: null, respValid: 0, rdata: new Array(c.lineWords).fill(0) };
+      // optional shared cache (rtl/ps_cache.v): direct-mapped, write-through, no write-allocate
+      const CL = c.cacheLines | 0, OW = Math.log2(c.lineWords), IW = CL ? Math.log2(CL) : 0;
+      const cache = CL ? { valid: new Array(CL).fill(0), tag: new Array(CL).fill(0), data: Array.from({ length: CL }, () => new Array(c.lineWords).fill(0)),
+        waiting: 0, wOp: 0, wIdx: 0, wTag: 0, upValid: 0, upData: new Array(c.lineWords).fill(0), dnValid: 0, dnReq: null } : null;
+      stats.cacheHits = 0; stats.cacheMisses = 0;
 
       let cycle = 0;
       for (; cycle < maxCycles; cycle++) {
@@ -497,6 +503,9 @@
           req: this.sms.map(s => Object.assign({}, s.mreq)),
           arbBusy: arb.busy, arbOwner: arb.owner, arbReqValid: arb.reqValid, arbReq: arb.req,
           memRespValid: mem.respValid, memRdata: mem.rdata.slice(),
+          // what the arbiter sees as "memory": the cache if there is one, DRAM otherwise
+          upValid: cache ? cache.upValid : mem.respValid, upData: cache ? cache.upData.slice() : mem.rdata.slice(),
+          dnValid: cache ? cache.dnValid : arb.reqValid, dnReq: cache ? cache.dnReq : arb.req,
         };
         if (disp.done) break;
 
@@ -523,14 +532,35 @@
               break;
             }
           }
-        } else if (P.memRespValid) {
+        } else if (P.upValid) {
           arb.busy = 0; arb.rr = (arb.owner + 1) % c.numSms;
+        }
+
+        // ---- cache (between arbiter and DRAM) ----
+        if (cache) {
+          cache.upValid = 0; cache.dnValid = 0;
+          if (P.arbReqValid) {
+            const r = P.arbReq; const idx = (r.addr >>> OW) & (CL - 1); const tag = r.addr >>> (OW + IW);
+            const hit = cache.valid[idx] && cache.tag[idx] === tag;
+            if (r.op === 0 && hit) {
+              cache.upValid = 1; cache.upData = cache.data[idx].slice(); stats.cacheHits++;
+              emit({ ev: 'cache', t: cycle, hit: 1, a: r.addr });
+            } else {
+              cache.dnValid = 1; cache.dnReq = r; cache.waiting = 1; cache.wOp = r.op; cache.wIdx = idx; cache.wTag = tag;
+              if (r.op === 1 && hit) for (let w = 0; w < c.lineWords; w++) if (r.wmask[w]) cache.data[idx][w] = r.wdata[w];
+              if (r.op === 2 && hit) cache.valid[idx] = 0;
+              if (r.op === 0) { stats.cacheMisses++; emit({ ev: 'cache', t: cycle, hit: 0, a: r.addr }); }
+            }
+          } else if (cache.waiting && P.memRespValid) {
+            cache.waiting = 0; cache.upValid = 1; cache.upData = P.memRdata.slice();
+            if (cache.wOp === 0) { cache.valid[cache.wIdx] = 1; cache.tag[cache.wIdx] = cache.wTag; cache.data[cache.wIdx] = P.memRdata.slice(); }
+          }
         }
 
         // ---- DRAM model ----
         mem.respValid = 0;
-        if (P.arbReqValid) {
-          mem.pend = 1; mem.cnt = c.lat; mem.req = P.arbReq;
+        if (P.dnValid) {
+          mem.pend = 1; mem.cnt = c.lat; mem.req = P.dnReq;
         } else if (mem.pend) {
           if (mem.cnt <= 1) {
             mem.pend = 0; mem.respValid = 1;
@@ -553,8 +583,8 @@
 
         // ---- SMs ----
         for (const sm of this.sms) {
-          const respValid = P.arbBusy && P.memRespValid && P.arbOwner === sm.id;
-          this._stepSM(sm, cycle, P.start[sm.id], P.blkId, block, grid, respValid, P.memRdata, emit, stats);
+          const respValid = P.arbBusy && P.upValid && P.arbOwner === sm.id;
+          this._stepSM(sm, cycle, P.start[sm.id], P.blkId, block, grid, respValid, P.upData, emit, stats);
         }
       }
       emit({ ev: 'done', t: cycle, ok: disp.done ? 1 : 0 });
@@ -752,6 +782,7 @@
     const asm = assemble(src);
     const cfg = Object.assign({}, DEFAULT_CFG, cfgOverride);
     if (asm.config.lat !== null && cfgOverride.lat === undefined) cfg.lat = asm.config.lat;
+    if (asm.config.cache !== null && cfgOverride.cacheLines === undefined) cfg.cacheLines = asm.config.cache;
     if (asm.config.sms !== null && cfgOverride.numSms === undefined) cfg.numSms = asm.config.sms;
     const sim = new Simulator(cfg);
     sim.load(asm.words, asm.config.params, asm.config.data);
@@ -771,7 +802,7 @@
       kernel: asm.config.name, source, cycles,
       grid: asm.config.grid, block: asm.config.block,
       numSms: cfg.numSms, numWarps: cfg.numWarps, warpSize: cfg.warpSize, numRegs: cfg.numRegs,
-      lineWords: cfg.lineWords, smemBanks: cfg.smemBanks, smemWords: cfg.smemWords, lat: cfg.lat,
+      lineWords: cfg.lineWords, smemBanks: cfg.smemBanks, smemWords: cfg.smemWords, lat: cfg.lat, cacheLines: cfg.cacheLines || 0,
       params: asm.config.params, dump: asm.config.dump, notes: asm.config.notes, fb: asm.config.fb,
       gmemInit: init,
       program: asm.listing,
